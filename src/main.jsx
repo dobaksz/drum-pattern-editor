@@ -11,7 +11,8 @@ import {
   Trash2
 } from "lucide-react";
 import "./styles.css";
-import { createPatternSvg } from "./svgExport";
+import { ExportDialog } from "./ExportDialog";
+import { PatternExporter } from "./patternExport";
 
 const DEFAULT_BEATS_PER_BAR = 4;
 const DEFAULT_STEPS_PER_BEAT = 4;
@@ -165,12 +166,12 @@ function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, on
   );
 }
 
-function ActionBar({ onClearGrid, onExportSvg }) {
+function ActionBar({ onClearGrid, onOpenExport }) {
   return (
     <div className="actions">
-      <button type="button" onClick={() => void onExportSvg()} title="Export SVG">
+      <button type="button" onClick={onOpenExport} title="Export diagram">
         <Download size={18} />
-        SVG
+        Export…
       </button>
       <button type="button" onClick={onClearGrid} title="Clear grid">
         <RotateCcw size={18} />
@@ -187,14 +188,14 @@ function EditorToolbar({
   onBarsChange,
   onBeatsPerBarChange,
   onClearGrid,
-  onExportSvg,
+  onOpenExport,
   onStepsPerBeatChange
 }) {
   return (
     <section className="editor-toolbar" aria-label="Pattern controls">
       <div className="editor-topbar">
         <Brand />
-        <ActionBar onClearGrid={onClearGrid} onExportSvg={onExportSvg} />
+        <ActionBar onClearGrid={onClearGrid} onOpenExport={onOpenExport} />
       </div>
       <div className="editor-ribbon">
         <RhythmControls
@@ -411,6 +412,10 @@ function App() {
   const [rows, setRows] = useState(starterRows);
   const [placementMode, setPlacementMode] = useState("cells");
   const [selectedShape, setSelectedShape] = useState("dot");
+  const [exportFormat, setExportFormat] = useState("svg");
+  const [exportError, setExportError] = useState("");
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const columnCount = beatsPerBar * bars * stepsPerBeat;
   const header = useMemo(() => {
     const option = stepsPerBeatOptions.find((item) => item.id === stepsPerBeat) ?? stepsPerBeatOptions[2];
@@ -515,46 +520,46 @@ function App() {
     );
   }
 
-  async function exportSvg() {
-    const svg = createPatternSvg({
-      columnCount,
-      header,
-      layout: {
-        cellSize: CELL_SIZE,
-        gridGap: GRID_GAP,
-        headerHeight: HEADER_HEIGHT,
-        rowGap: ROW_GAP,
-        rowHeight: ROW_HEIGHT,
-        rowLabelWidth: ROW_LABEL_WIDTH
-      },
-      rows,
-      shapeById,
-      stepsPerBeat
-    });
-    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-    if ("showSaveFilePicker" in window) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: "drum-pattern.svg",
-          types: [{ description: "SVG image", accept: { "image/svg+xml": [".svg"] } }]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        return;
-      } catch (error) {
-        if (error?.name === "AbortError") return;
-      }
+  function openExportDialog() {
+    setExportError("");
+    setIsExportDialogOpen(true);
+  }
+
+  function closeExportDialog() {
+    if (isExporting) return;
+    setIsExportDialogOpen(false);
+    setExportError("");
+  }
+
+  async function exportDiagram() {
+    setIsExporting(true);
+    setExportError("");
+
+    try {
+      const exporter = PatternExporter.create(exportFormat, {
+        columnCount,
+        header,
+        layout: {
+          cellSize: CELL_SIZE,
+          gridGap: GRID_GAP,
+          headerHeight: HEADER_HEIGHT,
+          rowGap: ROW_GAP,
+          rowHeight: ROW_HEIGHT,
+          rowLabelWidth: ROW_LABEL_WIDTH
+        },
+        rows,
+        shapeById,
+        stepsPerBeat
+      });
+      const saved = await exporter.export();
+
+      if (saved) setIsExportDialogOpen(false);
+    } catch (error) {
+      console.error(error);
+      setExportError("The diagram could not be exported. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "drum-pattern.svg";
-    link.target = "_blank";
-    document.body.append(link);
-    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   const rowHandlers = {
@@ -573,7 +578,7 @@ function App() {
         onBarsChange={updateBars}
         onBeatsPerBarChange={updateBeatsPerBar}
         onClearGrid={clearGrid}
-        onExportSvg={exportSvg}
+        onOpenExport={openExportDialog}
         onStepsPerBeatChange={updateStepsPerBeat}
         stepsPerBeat={stepsPerBeat}
       />
@@ -588,6 +593,15 @@ function App() {
         onSelectPlacementMode={setPlacementMode}
         onSelectShape={setSelectedShape}
         rowHandlers={rowHandlers}
+      />
+      <ExportDialog
+        error={exportError}
+        format={exportFormat}
+        isExporting={isExporting}
+        isOpen={isExportDialogOpen}
+        onClose={closeExportDialog}
+        onExport={exportDiagram}
+        onFormatChange={setExportFormat}
       />
     </main>
   );

@@ -18,7 +18,7 @@ html = html.replace(
   /<script type="module" crossorigin src="\.\/assets\/([^"]+)"><\/script>/,
   (_, fileName) => {
     const js = fs.readFileSync(path.join(distDir, "assets", fileName), "utf8");
-    inlineScript = `<script>\n${js}\n</script>`;
+    inlineScript = `<script type="module">\n${js}\n</script>`;
     return "";
   }
 );

@@ -168,6 +168,168 @@ select {
   margin-left: auto;
 }
 
+.export-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #20273a;
+  box-shadow: 0 24px 60px rgba(20, 36, 66, 0.28);
+}
+
+.export-dialog::backdrop {
+  background: rgba(24, 42, 74, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.export-dialog-panel {
+  padding: 24px;
+  border: 1px solid #d7dfeb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.export-dialog-heading h2 {
+  margin: 0;
+  color: #20273a;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.export-dialog-heading p {
+  margin: 7px 0 0;
+  color: #607089;
+  font-size: 13px;
+}
+
+.export-format-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.export-format-options legend {
+  margin-bottom: 8px;
+  color: #607089;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.export-format {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d5dde8;
+  border-radius: 7px;
+  background: #f9fbff;
+  color: #4b5f7a;
+  cursor: pointer;
+  text-transform: none;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.export-format:hover,
+.export-format:focus-within {
+  border-color: #9bbcf0;
+  background: #f4f8ff;
+}
+
+.export-format.active {
+  border-color: #2f7df4;
+  background: #edf4ff;
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 244, 0.22);
+  color: #1d5fd0;
+}
+
+.export-format input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.export-format span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.export-format strong {
+  color: #20273a;
+  font-size: 13px;
+}
+
+.export-format small {
+  color: #718096;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.export-error {
+  margin: 14px 0 0;
+  padding: 9px 11px;
+  border-radius: 5px;
+  background: #fff0f0;
+  color: #b42318;
+  font-size: 12px;
+}
+
+.export-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.export-dialog-actions button {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid #d5dde8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.export-dialog-actions button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.export-dialog-actions .secondary {
+  background: #ffffff;
+  color: #4b5f7a;
+}
+
+.export-dialog-actions .secondary:hover:not(:disabled) {
+  background: #f7f9fc;
+}
+
+.export-dialog-actions .primary {
+  border-color: #2f7df4;
+  background: #2f7df4;
+  color: #ffffff;
+}
+
+.export-dialog-actions .primary:hover:not(:disabled) {
+  border-color: #1d69df;
+  background: #1d69df;
+}
+
 .canvas-area {
   position: relative;
   overflow: auto;

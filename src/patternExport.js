@@ -44,7 +44,7 @@ class PatternDrawing {
 
     row.cells.forEach((mark, index) => {
       const x = rowLabelWidth + rowGap + index * (cellSize + gridGap);
-      drawing.rect(cellSize, rowHeight).move(x, y).fill("#eef1f5");
+      if (!this.#cellHasMark(row, index)) drawing.rect(cellSize, rowHeight).move(x, y).fill("#eef1f5");
       this.#drawMark(drawing, mark, row.color, x + cellSize / 2, y + cellSize / 2);
     });
 
@@ -54,12 +54,19 @@ class PatternDrawing {
     });
   }
 
+  #cellHasMark(row, cellIndex) {
+    return row.cells[cellIndex] !== "empty"
+      || row.dividers[cellIndex - 1] && row.dividers[cellIndex - 1] !== "empty"
+      || row.dividers[cellIndex] && row.dividers[cellIndex] !== "empty";
+  }
+
   #drawMark(drawing, shapeId, color, cx, cy) {
     const shape = this.shapeById[shapeId];
     if (!shape) return;
 
-    const size = 15.5;
-    const radius = 8.5;
+    const bounds = this.layout.cellSize;
+    const size = bounds / Math.sqrt(2);
+    const radius = bounds / 2;
     const strokeWidth = 4;
     const symbolColor = getSymbolColor(color);
 

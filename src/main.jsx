@@ -271,7 +271,13 @@ function GridCells({ placementMode, row, rowHandlers }) {
     <div className={`cell-strip grid-cells placement-${placementMode}`}>
       {row.cells.map((cell, cellIndex) => (
         <button
-          className="grid-cell"
+          className={
+            cell !== "empty"
+              || row.dividers[cellIndex - 1] && row.dividers[cellIndex - 1] !== "empty"
+              || row.dividers[cellIndex] && row.dividers[cellIndex] !== "empty"
+              ? "grid-cell occupied"
+              : "grid-cell"
+          }
           disabled={placementMode !== "cells"}
           key={`${row.id}-${cellIndex}`}
           type="button"

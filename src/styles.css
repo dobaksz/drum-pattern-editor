@@ -105,12 +105,19 @@ select {
 }
 
 .actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 78px;
   height: 36px;
-  border: 1px solid #d5dde8;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 6px;
-  background: #ffffff;
-  color: #20273a;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
   cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .swatch {
@@ -141,19 +148,6 @@ select {
   border-color: #2f7df4;
   background: #edf4ff;
   box-shadow: inset 0 0 0 1px rgba(47, 125, 244, 0.28), 0 1px 4px rgba(24, 42, 74, 0.16);
-}
-
-.actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 78px;
-  padding: 0 12px;
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .actions button:hover,
@@ -344,13 +338,6 @@ select {
   width: max-content;
   display: grid;
   gap: 2px;
-  background: transparent;
-  box-shadow: none;
-}
-
-.pattern-zoom {
-  width: max-content;
-  height: max-content;
 }
 
 .pattern-tools {
@@ -450,7 +437,6 @@ select {
 
 .header-row {
   height: var(--header-height);
-  margin-bottom: 0;
 }
 
 .cell-strip {
@@ -461,16 +447,6 @@ select {
 
 .grid-cells {
   position: relative;
-}
-
-.corner-cell {
-  width: var(--row-label-width);
-  height: var(--header-height);
-}
-
-.action-corner-cell {
-  width: var(--row-action-width);
-  height: var(--header-height);
 }
 
 .header-cell {
@@ -550,10 +526,6 @@ select {
   color: #1d5fd0;
 }
 
-.row-color-control {
-  padding: 0;
-}
-
 .row-color-control span {
   width: 16px;
   height: 16px;
@@ -571,12 +543,6 @@ select {
   border: 0;
   opacity: 0;
   cursor: pointer;
-}
-
-.row-remove-button:disabled,
-.row-actions-placeholder {
-  width: 28px;
-  height: 28px;
 }
 
 .grid-cell {
@@ -603,14 +569,6 @@ select {
 .placement-cells .grid-cell:hover {
   outline: 1px solid rgba(47, 125, 244, 0.7);
   outline-offset: -1px;
-}
-
-.grid-cell .ring,
-.grid-cell .hollow-diamond,
-.divider-mark .ring,
-.divider-mark .hollow-diamond {
-  background: transparent;
-  border-color: var(--symbol-color);
 }
 
 .divider-layer {
@@ -716,7 +674,6 @@ select {
 
 .symbol {
   display: block;
-  color: var(--symbol-color);
 }
 
 .dot {

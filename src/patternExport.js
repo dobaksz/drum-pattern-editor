@@ -5,6 +5,7 @@ import { getSymbolColor } from "./color";
 
 const SVG_FONT = "Arial, Helvetica, sans-serif";
 const PDF_MARGIN = 15;
+const EMPTY_MARK = "empty";
 
 class PatternDrawing {
   constructor({ columnCount, header, layout, rows, shapeById, stepsPerBeat }) {
@@ -15,7 +16,7 @@ class PatternDrawing {
     this.stepsPerBeat = stepsPerBeat;
     this.width = layout.rowLabelWidth + layout.rowGap + columnCount * (layout.cellSize + layout.gridGap) - layout.gridGap;
     this.height = layout.headerHeight + rows.length * (layout.rowHeight + layout.gridGap);
-    this.svg = this.#draw();
+    this.document = this.#draw();
   }
 
   #draw() {
@@ -55,9 +56,8 @@ class PatternDrawing {
   }
 
   #cellHasMark(row, cellIndex) {
-    return row.cells[cellIndex] !== "empty"
-      || row.dividers[cellIndex - 1] && row.dividers[cellIndex - 1] !== "empty"
-      || row.dividers[cellIndex] && row.dividers[cellIndex] !== "empty";
+    return [row.cells[cellIndex], row.dividers[cellIndex - 1], row.dividers[cellIndex]]
+      .some((mark) => mark && mark !== EMPTY_MARK);
   }
 
   #drawMark(drawing, shapeId, color, cx, cy) {
@@ -110,9 +110,11 @@ export class PatternExporter {
   }
 
   static create(format, pattern) {
-    if (format === "svg") return new SvgExporter(pattern);
-    if (format === "pdf") return new PdfExporter(pattern);
-    throw new Error(`Unsupported export format: ${format}`);
+    switch (format) {
+      case "svg": return new SvgExporter(pattern);
+      case "pdf": return new PdfExporter(pattern);
+      default: throw new Error(`Unsupported export format: ${format}`);
+    }
   }
 
   async export() {
@@ -154,7 +156,7 @@ export class PatternExporter {
 class SvgExporter extends PatternExporter {
   createFile() {
     return {
-      blob: new Blob([this.drawing.svg.svg()], { type: "image/svg+xml;charset=utf-8" }),
+      blob: new Blob([this.drawing.document.svg()], { type: "image/svg+xml;charset=utf-8" }),
       description: "SVG image",
       extension: ".svg",
       mimeType: "image/svg+xml",
@@ -175,7 +177,7 @@ class PdfExporter extends PatternExporter {
     const width = this.drawing.width * scale;
     const height = this.drawing.height * scale;
 
-    await pdf.svg(this.drawing.svg.node, {
+    await pdf.svg(this.drawing.document.node, {
       x: (pageWidth - width) / 2,
       y: (pageHeight - height) / 2,
       width,

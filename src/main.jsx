@@ -27,6 +27,7 @@ const ROW_GAP = 3;
 const HEADER_HEIGHT = 28;
 const ROW_HEIGHT = 28;
 const ADD_ROW_HEIGHT = 36;
+const EMPTY_MARK = "empty";
 
 const shapeOptions = [
   { id: "dot", label: "Filled circle", mark: "dot" },
@@ -51,12 +52,18 @@ const starterRows = ["Hi Hat", "Snare", "Kick"].map((name, index) => ({
   id: `starter-row-${index}`,
   name,
   color: rowColors[index],
-  cells: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT).fill("empty"),
-  dividers: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT - 1).fill("empty")
+  cells: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT).fill(EMPTY_MARK),
+  dividers: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT - 1).fill(EMPTY_MARK)
 }));
 
+function resizeMarks(marks, length) {
+  return marks.length > length
+    ? marks.slice(0, length)
+    : [...marks, ...Array(length - marks.length).fill(EMPTY_MARK)];
+}
+
 function ShapeMark({ color, shapeId }) {
-  if (shapeId === "empty") return null;
+  if (shapeId === EMPTY_MARK) return null;
   const shape = shapeById[shapeId];
   if (!shape) return null;
   return <span className={`symbol ${shape.mark}`} style={{ "--symbol-color": getSymbolColor(color) }} />;
@@ -80,7 +87,7 @@ function RhythmControls({
   onStepsPerBeatChange
 }) {
   return (
-    <div className="control-group rhythm-controls" aria-label="Rhythm settings">
+    <div className="control-group" aria-label="Rhythm settings">
       <label>
         Bars
         <select value={bars} onChange={(event) => onBarsChange(Number(event.target.value))}>
@@ -155,10 +162,10 @@ function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, on
         </div>
         <span className="tool-divider" aria-hidden="true" />
         <button
-          className={selectedShape === "empty" ? "swatch active" : "swatch"}
+          className={selectedShape === EMPTY_MARK ? "swatch active" : "swatch"}
           title="Erase"
           type="button"
-          onClick={() => onSelectShape("empty")}
+          onClick={() => onSelectShape(EMPTY_MARK)}
         >
           <Eraser size={16} />
         </button>
@@ -269,24 +276,23 @@ function GridCells({ placementMode, row, rowHandlers }) {
 
   return (
     <div className={`cell-strip grid-cells placement-${placementMode}`}>
-      {row.cells.map((cell, cellIndex) => (
-        <button
-          className={
-            cell !== "empty"
-              || row.dividers[cellIndex - 1] && row.dividers[cellIndex - 1] !== "empty"
-              || row.dividers[cellIndex] && row.dividers[cellIndex] !== "empty"
-              ? "grid-cell occupied"
-              : "grid-cell"
-          }
-          disabled={placementMode !== "cells"}
-          key={`${row.id}-${cellIndex}`}
-          type="button"
-          onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
-          aria-label={`${row.name} column ${cellIndex + 1}`}
-        >
-          <ShapeMark color={symbolColor} shapeId={cell} />
-        </button>
-      ))}
+      {row.cells.map((cell, cellIndex) => {
+        const hasMark = [cell, row.dividers[cellIndex - 1], row.dividers[cellIndex]]
+          .some((mark) => mark && mark !== EMPTY_MARK);
+
+        return (
+          <button
+            className={hasMark ? "grid-cell occupied" : "grid-cell"}
+            disabled={placementMode !== "cells"}
+            key={`${row.id}-${cellIndex}`}
+            type="button"
+            onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
+            aria-label={`${row.name} column ${cellIndex + 1}`}
+          >
+            <ShapeMark color={symbolColor} shapeId={cell} />
+          </button>
+        );
+      })}
       <div className="divider-layer" aria-hidden={placementMode !== "lines"}>
         {row.dividers.map((divider, dividerIndex) => (
           <div
@@ -396,17 +402,15 @@ function PatternEditor({
           onSelectPlacementMode={onSelectPlacementMode}
           onSelectShape={onSelectShape}
         />
-        <div className="pattern-zoom">
-          <PatternGrid
-            columnCount={columnCount}
-            header={header}
-            rows={rows}
-            placementMode={placementMode}
-            stepsPerBeat={stepsPerBeat}
-            onAddRow={onAddRow}
-            rowHandlers={rowHandlers}
-          />
-        </div>
+        <PatternGrid
+          columnCount={columnCount}
+          header={header}
+          rows={rows}
+          placementMode={placementMode}
+          stepsPerBeat={stepsPerBeat}
+          onAddRow={onAddRow}
+          rowHandlers={rowHandlers}
+        />
       </div>
     </section>
   );
@@ -446,14 +450,8 @@ function App() {
     setRows((current) =>
       current.map((row) => ({
         ...row,
-        cells:
-          row.cells.length > nextLength
-            ? row.cells.slice(0, nextLength)
-            : [...row.cells, ...Array(nextLength - row.cells.length).fill("empty")],
-        dividers:
-          row.dividers.length > Math.max(0, nextLength - 1)
-            ? row.dividers.slice(0, Math.max(0, nextLength - 1))
-            : [...row.dividers, ...Array(Math.max(0, nextLength - 1 - row.dividers.length)).fill("empty")]
+        cells: resizeMarks(row.cells, nextLength),
+        dividers: resizeMarks(row.dividers, Math.max(0, nextLength - 1))
       }))
     );
   }
@@ -470,24 +468,13 @@ function App() {
     setGridShape(bars, beatsPerBar, nextStepsPerBeat);
   }
 
-  function paintCell(rowId, cellIndex) {
+  function paintMark(rowId, collection, markIndex) {
     setRows((current) =>
       current.map((row) => {
         if (row.id !== rowId) return row;
-        const cells = [...row.cells];
-        cells[cellIndex] = selectedShape;
-        return { ...row, cells };
-      })
-    );
-  }
-
-  function paintDivider(rowId, dividerIndex) {
-    setRows((current) =>
-      current.map((row) => {
-        if (row.id !== rowId) return row;
-        const dividers = [...row.dividers];
-        dividers[dividerIndex] = selectedShape;
-        return { ...row, dividers };
+        const marks = [...row[collection]];
+        marks[markIndex] = selectedShape;
+        return { ...row, [collection]: marks };
       })
     );
   }
@@ -507,8 +494,8 @@ function App() {
         id: `row-${Math.max(0, ...current.map((row) => Number(row.id.replace("row-", "")) || 0)) + 1}`,
         name: `Row ${current.length + 1}`,
         color: rowColors[current.length % rowColors.length],
-        cells: Array(columnCount).fill("empty"),
-        dividers: Array(Math.max(0, columnCount - 1)).fill("empty")
+        cells: Array(columnCount).fill(EMPTY_MARK),
+        dividers: Array(Math.max(0, columnCount - 1)).fill(EMPTY_MARK)
       }
     ]);
   }
@@ -521,8 +508,8 @@ function App() {
     setRows((current) =>
       current.map((row) => ({
         ...row,
-        cells: Array(columnCount).fill("empty"),
-        dividers: Array(Math.max(0, columnCount - 1)).fill("empty")
+        cells: Array(columnCount).fill(EMPTY_MARK),
+        dividers: Array(Math.max(0, columnCount - 1)).fill(EMPTY_MARK)
       }))
     );
   }
@@ -570,8 +557,8 @@ function App() {
   }
 
   const rowHandlers = {
-    paintCell,
-    paintDivider,
+    paintCell: (rowId, index) => paintMark(rowId, "cells", index),
+    paintDivider: (rowId, index) => paintMark(rowId, "dividers", index),
     removeRow,
     updateColor: updateRowColor,
     updateName

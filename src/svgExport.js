@@ -62,13 +62,13 @@ function createMarkSvg({ cell, color, cx, cy, shapeById }) {
     return `<circle cx="${cx}" cy="${cy}" r="${symbolRadius}" fill="${filledColor}"/>`;
   }
   if (shape.mark === "ring") {
-    return `<circle cx="${cx}" cy="${cy}" r="${symbolRadius - 2}" fill="#ffffff" stroke="${hollowColor}" stroke-width="4"/>`;
+    return `<circle cx="${cx}" cy="${cy}" r="${symbolRadius - 2}" fill="none" stroke="${hollowColor}" stroke-width="4"/>`;
   }
   if (shape.mark === "diamond") {
     return `<rect x="${cx - symbolSize / 2}" y="${cy - symbolSize / 2}" width="${symbolSize}" height="${symbolSize}" fill="${filledColor}" transform="rotate(45 ${cx} ${cy})"/>`;
   }
   if (shape.mark === "hollow-diamond") {
-    return `<rect x="${cx - symbolSize / 2}" y="${cy - symbolSize / 2}" width="${symbolSize}" height="${symbolSize}" fill="#ffffff" stroke="${hollowColor}" stroke-width="4" transform="rotate(45 ${cx} ${cy})"/>`;
+    return `<rect x="${cx - symbolSize / 2}" y="${cy - symbolSize / 2}" width="${symbolSize}" height="${symbolSize}" fill="none" stroke="${hollowColor}" stroke-width="4" transform="rotate(45 ${cx} ${cy})"/>`;
   }
   return "";
 }

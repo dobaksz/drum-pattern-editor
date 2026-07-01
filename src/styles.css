@@ -404,7 +404,7 @@ select {
 
 .grid-cell .ring,
 .grid-cell .hollow-diamond {
-  background: #ffffff;
+  background: transparent;
   border-color: color-mix(in srgb, var(--symbol-color) 82%, black);
 }
 
@@ -460,7 +460,7 @@ select {
   height: 22px;
   border: 4px solid var(--symbol-color);
   border-radius: 50%;
-  background: #ffffff;
+  background: transparent;
 }
 
 .diamond {
@@ -474,7 +474,7 @@ select {
   width: 15.56px;
   height: 15.56px;
   border: 4px solid var(--symbol-color);
-  background: #ffffff;
+  background: transparent;
   transform: rotate(45deg);
 }
 

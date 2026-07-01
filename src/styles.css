@@ -207,6 +207,39 @@ select {
   box-shadow: 0 2px 8px rgba(24, 42, 74, 0.08);
 }
 
+.placement-tools-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.placement-option {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #607089;
+  cursor: pointer;
+  line-height: 0;
+  transition: background-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
+}
+
+.placement-option:hover,
+.placement-option:focus-visible {
+  background: #f7f9fc;
+  color: #3d4858;
+}
+
+.placement-option.active {
+  background: #edf4ff;
+  color: #1d5fd0;
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 244, 0.32);
+}
+
 .tool-divider {
   width: 1px;
   height: 24px;
@@ -262,6 +295,10 @@ select {
   display: grid;
   grid-template-columns: repeat(var(--columns), var(--cell-size));
   gap: var(--grid-gap);
+}
+
+.grid-cells {
+  position: relative;
 }
 
 .corner-cell {
@@ -392,20 +429,96 @@ select {
   cursor: crosshair;
 }
 
-.grid-cell:hover {
+.grid-cell:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.placement-cells .grid-cell:hover {
   outline: 1px solid rgba(47, 125, 244, 0.7);
   outline-offset: -1px;
 }
 
 .grid-cell .dot,
-.grid-cell .diamond {
+.grid-cell .diamond,
+.divider-mark .dot,
+.divider-mark .diamond {
   filter: saturate(2.4) brightness(0.72) contrast(1.2);
 }
 
 .grid-cell .ring,
-.grid-cell .hollow-diamond {
+.grid-cell .hollow-diamond,
+.divider-mark .ring,
+.divider-mark .hollow-diamond {
   background: transparent;
   border-color: color-mix(in srgb, var(--symbol-color) 82%, black);
+}
+
+.divider-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.divider-slot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+}
+
+.divider-mark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.divider-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 12px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translateX(-50%);
+  cursor: crosshair;
+  pointer-events: none;
+}
+
+.placement-lines .divider-target {
+  pointer-events: auto;
+}
+
+.divider-target::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transform: translateX(-50%);
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.divider-target:hover::after,
+.divider-target:focus-visible::after {
+  background: rgba(47, 125, 244, 0.65);
+  box-shadow: 0 0 0 3px rgba(47, 125, 244, 0.12);
+}
+
+.divider-target:focus-visible {
+  outline: none;
 }
 
 .add-row-row {

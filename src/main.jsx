@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  BetweenVerticalStart,
   Download,
   Eraser,
   Grid2X2,
   Plus,
   RotateCcw,
+  SquareDot,
   Trash2
 } from "lucide-react";
 import "./styles.css";
@@ -47,7 +49,8 @@ const starterRows = ["Hi Hat", "Snare", "Kick"].map((name, index) => ({
   id: `starter-row-${index}`,
   name,
   color: rowColors[index],
-  cells: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT).fill("empty")
+  cells: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT).fill("empty"),
+  dividers: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT - 1).fill("empty")
 }));
 
 function ShapeMark({ color, shapeId }) {
@@ -110,7 +113,7 @@ function RhythmControls({
   );
 }
 
-function PaintControls({ selectedShape, onSelectShape }) {
+function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, onSelectShape }) {
   return (
     <div className="pattern-tools" aria-label="Paint tools">
       <div className="pattern-tools-cluster">
@@ -125,6 +128,29 @@ function PaintControls({ selectedShape, onSelectShape }) {
             <ShapeMark color="#555555" shapeId={shape.id} />
           </button>
         ))}
+        <span className="tool-divider" aria-hidden="true" />
+        <div className="placement-tools-cluster" role="group" aria-label="Mark placement">
+          <button
+            className={placementMode === "cells" ? "placement-option active" : "placement-option"}
+            type="button"
+            aria-pressed={placementMode === "cells"}
+            aria-label="Place marks in cells"
+            title="Place marks in cells"
+            onClick={() => onSelectPlacementMode("cells")}
+          >
+            <SquareDot size={17} />
+          </button>
+          <button
+            className={placementMode === "lines" ? "placement-option active" : "placement-option"}
+            type="button"
+            aria-pressed={placementMode === "lines"}
+            aria-label="Place marks between cells"
+            title="Place marks between cells"
+            onClick={() => onSelectPlacementMode("lines")}
+          >
+            <BetweenVerticalStart size={17} />
+          </button>
+        </div>
         <span className="tool-divider" aria-hidden="true" />
         <button
           className={selectedShape === "empty" ? "swatch active" : "swatch"}
@@ -236,14 +262,15 @@ function RowActions({ canRemove, row, rowHandlers }) {
   );
 }
 
-function GridCells({ row, rowHandlers }) {
+function GridCells({ placementMode, row, rowHandlers }) {
   const symbolColor = row.color;
 
   return (
-    <div className="cell-strip">
+    <div className={`cell-strip grid-cells placement-${placementMode}`}>
       {row.cells.map((cell, cellIndex) => (
         <button
           className="grid-cell"
+          disabled={placementMode !== "cells"}
           key={`${row.id}-${cellIndex}`}
           type="button"
           onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
@@ -252,18 +279,38 @@ function GridCells({ row, rowHandlers }) {
           <ShapeMark color={symbolColor} shapeId={cell} />
         </button>
       ))}
+      <div className="divider-layer" aria-hidden={placementMode !== "lines"}>
+        {row.dividers.map((divider, dividerIndex) => (
+          <div
+            className="divider-slot"
+            key={`${row.id}-divider-${dividerIndex}`}
+            style={{ left: `${(dividerIndex + 1) * (CELL_SIZE + GRID_GAP) - GRID_GAP / 2}px` }}
+          >
+            <div className="divider-mark" aria-hidden="true">
+              <ShapeMark color={symbolColor} shapeId={divider} />
+            </div>
+            <button
+              className="divider-target"
+              disabled={placementMode !== "lines"}
+              type="button"
+              onClick={() => rowHandlers.paintDivider(row.id, dividerIndex)}
+              aria-label={`${row.name} divider after column ${dividerIndex + 1}`}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function PatternRow({ canRemove, row, rowHandlers }) {
+function PatternRow({ canRemove, placementMode, row, rowHandlers }) {
   return (
     <div className="pattern-row">
       <RowLabel
         row={row}
         rowHandlers={rowHandlers}
       />
-      <GridCells row={row} rowHandlers={rowHandlers} />
+      <GridCells placementMode={placementMode} row={row} rowHandlers={rowHandlers} />
       <RowActions canRemove={canRemove} row={row} rowHandlers={rowHandlers} />
     </div>
   );
@@ -285,6 +332,7 @@ function PatternGrid({
   columnCount,
   header,
   rows,
+  placementMode,
   stepsPerBeat,
   onAddRow,
   rowHandlers
@@ -296,6 +344,7 @@ function PatternGrid({
         <PatternRow
           canRemove={rows.length > 1}
           key={row.id}
+          placementMode={placementMode}
           row={row}
           rowHandlers={rowHandlers}
         />
@@ -309,9 +358,11 @@ function PatternEditor({
   columnCount,
   header,
   rows,
+  placementMode,
   selectedShape,
   stepsPerBeat,
   onAddRow,
+  onSelectPlacementMode,
   onSelectShape,
   rowHandlers
 }) {
@@ -331,12 +382,18 @@ function PatternEditor({
           "--row-height": `${ROW_HEIGHT}px`
         }}
       >
-        <PaintControls selectedShape={selectedShape} onSelectShape={onSelectShape} />
+        <PaintControls
+          placementMode={placementMode}
+          selectedShape={selectedShape}
+          onSelectPlacementMode={onSelectPlacementMode}
+          onSelectShape={onSelectShape}
+        />
         <div className="pattern-zoom">
           <PatternGrid
             columnCount={columnCount}
             header={header}
             rows={rows}
+            placementMode={placementMode}
             stepsPerBeat={stepsPerBeat}
             onAddRow={onAddRow}
             rowHandlers={rowHandlers}
@@ -352,6 +409,7 @@ function App() {
   const [beatsPerBar, setBeatsPerBar] = useState(DEFAULT_BEATS_PER_BAR);
   const [stepsPerBeat, setStepsPerBeat] = useState(DEFAULT_STEPS_PER_BEAT);
   const [rows, setRows] = useState(starterRows);
+  const [placementMode, setPlacementMode] = useState("cells");
   const [selectedShape, setSelectedShape] = useState("dot");
   const columnCount = beatsPerBar * bars * stepsPerBeat;
   const header = useMemo(() => {
@@ -379,7 +437,11 @@ function App() {
         cells:
           row.cells.length > nextLength
             ? row.cells.slice(0, nextLength)
-            : [...row.cells, ...Array(nextLength - row.cells.length).fill("empty")]
+            : [...row.cells, ...Array(nextLength - row.cells.length).fill("empty")],
+        dividers:
+          row.dividers.length > Math.max(0, nextLength - 1)
+            ? row.dividers.slice(0, Math.max(0, nextLength - 1))
+            : [...row.dividers, ...Array(Math.max(0, nextLength - 1 - row.dividers.length)).fill("empty")]
       }))
     );
   }
@@ -407,6 +469,17 @@ function App() {
     );
   }
 
+  function paintDivider(rowId, dividerIndex) {
+    setRows((current) =>
+      current.map((row) => {
+        if (row.id !== rowId) return row;
+        const dividers = [...row.dividers];
+        dividers[dividerIndex] = selectedShape;
+        return { ...row, dividers };
+      })
+    );
+  }
+
   function updateName(rowId, name) {
     setRows((current) => current.map((row) => (row.id === rowId ? { ...row, name } : row)));
   }
@@ -422,7 +495,8 @@ function App() {
         id: `row-${Math.max(0, ...current.map((row) => Number(row.id.replace("row-", "")) || 0)) + 1}`,
         name: `Row ${current.length + 1}`,
         color: rowColors[current.length % rowColors.length],
-        cells: Array(columnCount).fill("empty")
+        cells: Array(columnCount).fill("empty"),
+        dividers: Array(Math.max(0, columnCount - 1)).fill("empty")
       }
     ]);
   }
@@ -435,7 +509,8 @@ function App() {
     setRows((current) =>
       current.map((row) => ({
         ...row,
-        cells: Array(columnCount).fill("empty")
+        cells: Array(columnCount).fill("empty"),
+        dividers: Array(Math.max(0, columnCount - 1)).fill("empty")
       }))
     );
   }
@@ -484,6 +559,7 @@ function App() {
 
   const rowHandlers = {
     paintCell,
+    paintDivider,
     removeRow,
     updateColor: updateRowColor,
     updateName
@@ -505,9 +581,11 @@ function App() {
         columnCount={columnCount}
         header={header}
         rows={rows}
+        placementMode={placementMode}
         selectedShape={selectedShape}
         stepsPerBeat={stepsPerBeat}
         onAddRow={addRow}
+        onSelectPlacementMode={setPlacementMode}
         onSelectShape={setSelectedShape}
         rowHandlers={rowHandlers}
       />

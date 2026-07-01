@@ -88,6 +88,19 @@ function createGridCell({ cell, cellIndex, row, y, layout, shapeById }) {
   return `${background}${mark}`;
 }
 
+function createDividerMark({ divider, dividerIndex, row, y, layout, shapeById }) {
+  const { cellSize, gridGap, rowGap, rowHeight, rowLabelWidth } = layout;
+  const cx = rowLabelWidth + rowGap + (dividerIndex + 1) * (cellSize + gridGap) - gridGap / 2;
+
+  return createMarkSvg({
+    cell: divider,
+    color: row.color,
+    cx,
+    cy: y + rowHeight / 2,
+    shapeById
+  });
+}
+
 function createPatternRow({ row, rowIndex, layout, shapeById }) {
   const { gridGap, headerHeight, rowHeight, rowLabelWidth } = layout;
   const y = headerHeight + rowIndex * (rowHeight + gridGap);
@@ -101,7 +114,10 @@ function createPatternRow({ row, rowIndex, layout, shapeById }) {
       size: 15,
       fill: "#20273a"
     }),
-    ...row.cells.map((cell, cellIndex) => createGridCell({ cell, cellIndex, row, y, layout, shapeById }))
+    ...row.cells.map((cell, cellIndex) => createGridCell({ cell, cellIndex, row, y, layout, shapeById })),
+    ...(row.dividers ?? []).map((divider, dividerIndex) =>
+      createDividerMark({ divider, dividerIndex, row, y, layout, shapeById })
+    )
   ].join("");
 }
 

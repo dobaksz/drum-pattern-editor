@@ -2,8 +2,8 @@ import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Download,
+  Eraser,
   Grid2X2,
-  MousePointer2,
   Plus,
   RotateCcw,
   Trash2
@@ -132,7 +132,7 @@ function PaintControls({ selectedShape, onSelectShape }) {
           type="button"
           onClick={() => onSelectShape("empty")}
         >
-          <MousePointer2 size={16} />
+          <Eraser size={16} />
         </button>
       </div>
     </div>

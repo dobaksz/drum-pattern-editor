@@ -126,6 +126,15 @@ select {
   color: #1f2428;
   cursor: pointer;
   line-height: 0;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
+}
+
+.swatch:hover,
+.swatch:focus-visible {
+  border-color: #d5dde8;
+  background: #f7f9fc;
+  color: #3d4858;
+  box-shadow: 0 1px 3px rgba(24, 42, 74, 0.08);
 }
 
 .swatch.active {
@@ -144,6 +153,15 @@ select {
   border-color: rgba(255, 255, 255, 0.45);
   background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.actions button:hover,
+.actions button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 3px 9px rgba(18, 63, 132, 0.28);
+  transform: translateY(-1px);
 }
 
 .actions {

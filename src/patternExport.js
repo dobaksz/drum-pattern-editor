@@ -60,6 +60,7 @@ class PatternDrawing {
 
     const size = 15.5;
     const radius = 8.5;
+    const strokeWidth = 4;
     const symbolColor = getSymbolColor(color);
 
     switch (shape.mark) {
@@ -67,13 +68,18 @@ class PatternDrawing {
         drawing.circle(radius * 2).center(cx, cy).fill(symbolColor);
         break;
       case "ring":
-        drawing.circle((radius - 2) * 2).center(cx, cy).fill("none").stroke({ color: symbolColor, width: 4 });
+        drawing.circle((radius - strokeWidth / 2) * 2).center(cx, cy).fill("none").stroke({ color: symbolColor, width: strokeWidth });
         break;
       case "diamond":
         drawing.rect(size, size).center(cx, cy).fill(symbolColor).rotate(45, cx, cy);
         break;
       case "hollow-diamond":
-        drawing.rect(size, size).center(cx, cy).fill("none").stroke({ color: symbolColor, width: 4 }).rotate(45, cx, cy);
+        drawing
+          .rect(size - strokeWidth, size - strokeWidth)
+          .center(cx, cy)
+          .fill("none")
+          .stroke({ color: symbolColor, width: strokeWidth })
+          .rotate(45, cx, cy);
         break;
     }
   }

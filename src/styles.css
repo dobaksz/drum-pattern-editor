@@ -389,30 +389,33 @@ select {
 }
 
 .placement-option {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: inline-grid;
   place-items: center;
   padding: 0;
-  border: 0;
-  border-radius: 4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
   background: transparent;
   color: #607089;
   cursor: pointer;
   line-height: 0;
-  transition: background-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 
 .placement-option:hover,
 .placement-option:focus-visible {
+  border-color: #d5dde8;
   background: #f7f9fc;
   color: #3d4858;
+  box-shadow: 0 1px 3px rgba(24, 42, 74, 0.08);
 }
 
 .placement-option.active {
+  border-color: #2f7df4;
   background: #edf4ff;
   color: #1d5fd0;
-  box-shadow: inset 0 0 0 1px rgba(47, 125, 244, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 244, 0.28), 0 1px 4px rgba(24, 42, 74, 0.16);
 }
 
 .tool-divider {

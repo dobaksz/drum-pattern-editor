@@ -1,10 +1,9 @@
 import { SVG } from "@svgdotjs/svg.js";
 import { jsPDF } from "jspdf";
 import "svg2pdf.js";
+import { getSymbolColor } from "./color";
 
 const SVG_FONT = "Arial, Helvetica, sans-serif";
-const FILLED_MARK_MIX = 0.72;
-const HOLLOW_MARK_MIX = 0.82;
 const PDF_MARGIN = 15;
 
 class PatternDrawing {
@@ -61,21 +60,20 @@ class PatternDrawing {
 
     const size = 15.5;
     const radius = 8.5;
-    const filledColor = mixHexColors(color, "#000000", FILLED_MARK_MIX);
-    const hollowColor = mixHexColors(color, "#000000", HOLLOW_MARK_MIX);
+    const symbolColor = getSymbolColor(color);
 
     switch (shape.mark) {
       case "dot":
-        drawing.circle(radius * 2).center(cx, cy).fill(filledColor);
+        drawing.circle(radius * 2).center(cx, cy).fill(symbolColor);
         break;
       case "ring":
-        drawing.circle((radius - 2) * 2).center(cx, cy).fill("none").stroke({ color: hollowColor, width: 4 });
+        drawing.circle((radius - 2) * 2).center(cx, cy).fill("none").stroke({ color: symbolColor, width: 4 });
         break;
       case "diamond":
-        drawing.rect(size, size).center(cx, cy).fill(filledColor).rotate(45, cx, cy);
+        drawing.rect(size, size).center(cx, cy).fill(symbolColor).rotate(45, cx, cy);
         break;
       case "hollow-diamond":
-        drawing.rect(size, size).center(cx, cy).fill("none").stroke({ color: hollowColor, width: 4 }).rotate(45, cx, cy);
+        drawing.rect(size, size).center(cx, cy).fill("none").stroke({ color: symbolColor, width: 4 }).rotate(45, cx, cy);
         break;
     }
   }
@@ -179,21 +177,4 @@ class PdfExporter extends PatternExporter {
       suggestedName: "drum-pattern.pdf"
     };
   }
-}
-
-function mixHexColors(hex, otherHex, amount) {
-  const normalize = (value) => {
-    const expanded = value.replace("#", "");
-    return expanded.length === 3
-      ? expanded.split("").map((char) => char + char).join("")
-      : expanded.padEnd(6, "0").slice(0, 6);
-  };
-  const source = normalize(hex);
-  const target = normalize(otherHex);
-  const color = [0, 2, 4].map((index) => {
-    const sourceChannel = parseInt(source.slice(index, index + 2), 16);
-    const targetChannel = parseInt(target.slice(index, index + 2), 16);
-    return Math.round(sourceChannel * amount + targetChannel * (1 - amount)).toString(16).padStart(2, "0");
-  });
-  return `#${color.join("")}`;
 }

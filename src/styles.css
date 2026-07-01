@@ -601,19 +601,12 @@ select {
   outline-offset: -1px;
 }
 
-.grid-cell .dot,
-.grid-cell .diamond,
-.divider-mark .dot,
-.divider-mark .diamond {
-  filter: saturate(2.4) brightness(0.72) contrast(1.2);
-}
-
 .grid-cell .ring,
 .grid-cell .hollow-diamond,
 .divider-mark .ring,
 .divider-mark .hollow-diamond {
   background: transparent;
-  border-color: color-mix(in srgb, var(--symbol-color) 82%, black);
+  border-color: var(--symbol-color);
 }
 
 .divider-layer {

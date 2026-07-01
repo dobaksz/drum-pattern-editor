@@ -11,6 +11,7 @@ import {
   Trash2
 } from "lucide-react";
 import "./styles.css";
+import { getSymbolColor } from "./color";
 import { ExportDialog } from "./ExportDialog";
 import { PatternExporter } from "./patternExport";
 
@@ -58,7 +59,7 @@ function ShapeMark({ color, shapeId }) {
   if (shapeId === "empty") return null;
   const shape = shapeById[shapeId];
   if (!shape) return null;
-  return <span className={`symbol ${shape.mark}`} style={{ "--symbol-color": color }} />;
+  return <span className={`symbol ${shape.mark}`} style={{ "--symbol-color": getSymbolColor(color) }} />;
 }
 
 function Brand() {

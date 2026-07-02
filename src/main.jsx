@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { getSymbolColor } from "./color";
-import { ExportDialog } from "./ExportDialog";
-import { PatternExporter } from "./patternExport";
+import { ExportDialog } from "./export_dialog";
+import { PatternExporter } from "./pattern_export";
 
 const DEFAULT_BEATS_PER_BAR = 4;
 const DEFAULT_STEPS_PER_BEAT = 4;

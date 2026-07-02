@@ -4,9 +4,6 @@ const MAX_BARS = 4;
 const MAX_BEATS_PER_BAR = 8;
 
 const EMPTY_SYMBOL_ID = "empty";
-const DEFAULT_SYMBOL_ID = "dot";
-const DEFAULT_PLACEMENT_MODE = "cells";
-const DEFAULT_EXPORT_FORMAT = "svg";
 
 const SYMBOLS = Object.freeze([
   Object.freeze({ id: "dot", label: "Filled circle", mark: "dot" }),
@@ -53,8 +50,7 @@ export class PatternRow {
   }
 
   resize(columnCount) {
-    return new PatternRow({
-      ...this,
+    return this.#copy({
       cells: resizeMarks(this.cells, columnCount),
       dividers: resizeMarks(this.dividers, Math.max(0, columnCount - 1))
     });
@@ -65,20 +61,19 @@ export class PatternRow {
     if (!marks || index < 0 || index >= marks.length) return this;
     const nextMarks = [...marks];
     nextMarks[index] = symbolId;
-    return new PatternRow({ ...this, [collection]: nextMarks });
+    return this.#copy({ [collection]: nextMarks });
   }
 
   rename(name) {
-    return new PatternRow({ ...this, name });
+    return this.#copy({ name });
   }
 
   recolor(color) {
-    return new PatternRow({ ...this, color });
+    return this.#copy({ color });
   }
 
   clear() {
-    return new PatternRow({
-      ...this,
+    return this.#copy({
       cells: Array(this.cells.length).fill(EMPTY_SYMBOL_ID),
       dividers: Array(this.dividers.length).fill(EMPTY_SYMBOL_ID)
     });
@@ -87,6 +82,10 @@ export class PatternRow {
   hasMarkAtCell(index) {
     return [this.cells[index], this.dividers[index - 1], this.dividers[index]]
       .some((symbolId) => symbolId && symbolId !== EMPTY_SYMBOL_ID);
+  }
+
+  #copy(overrides) {
+    return new PatternRow({ ...this, ...overrides });
   }
 }
 
@@ -107,7 +106,6 @@ export class PatternData {
     this.columnCount = bars * beatsPerBar * stepsPerBeat;
     this.header = Object.freeze(this.#createHeader());
     this.symbols = SYMBOLS;
-    this.rowColors = ROW_COLORS;
     this.barOptions = BAR_OPTIONS;
     this.beatOptions = BEAT_OPTIONS;
     this.stepsPerBeatOptions = STEPS_PER_BEAT_OPTIONS;
@@ -149,13 +147,11 @@ export class PatternData {
   }
 
   paintCell(rowId, index, symbolId) {
-    if (!this.hasSymbol(symbolId)) return this;
-    return this.#updateRow(rowId, (row) => row.paint("cells", index, symbolId));
+    return this.#paint(rowId, "cells", index, symbolId);
   }
 
   paintDivider(rowId, index, symbolId) {
-    if (!this.hasSymbol(symbolId)) return this;
-    return this.#updateRow(rowId, (row) => row.paint("dividers", index, symbolId));
+    return this.#paint(rowId, "dividers", index, symbolId);
   }
 
   renameRow(rowId, name) {
@@ -185,6 +181,11 @@ export class PatternData {
 
   clear() {
     return this.#copy({ rows: this.rows.map((row) => row.clear()) });
+  }
+
+  #paint(rowId, collection, index, symbolId) {
+    if (!this.hasSymbol(symbolId)) return this;
+    return this.#updateRow(rowId, (row) => row.paint(collection, index, symbolId));
   }
 
   #createHeader() {
@@ -235,9 +236,9 @@ export class PatternData {
 
 export class RuntimeData {
   constructor({
-    selectedSymbolId = DEFAULT_SYMBOL_ID,
-    placementMode = DEFAULT_PLACEMENT_MODE,
-    exportFormat = DEFAULT_EXPORT_FORMAT,
+    selectedSymbolId = "dot",
+    placementMode = "cells",
+    exportFormat = "svg",
     exportError = "",
     isExportDialogOpen = false,
     isExporting = false

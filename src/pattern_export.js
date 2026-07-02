@@ -42,18 +42,14 @@ class PatternDrawing {
 
     row.cells.forEach((mark, index) => {
       const x = rowLabelWidth + rowGap + index * (cellSize + gridGap);
-      if (!this.#cellHasMark(row, index)) drawing.rect(cellSize, rowHeight).move(x, y).fill("#eef1f5");
+      if (!row.hasMarkAtCell(index)) drawing.rect(cellSize, rowHeight).move(x, y).fill("#eef1f5");
       this.#drawMark(drawing, mark, row.color, x + cellSize / 2, y + cellSize / 2);
     });
 
-    (row.dividers ?? []).forEach((mark, index) => {
+    row.dividers.forEach((mark, index) => {
       const x = rowLabelWidth + rowGap + (index + 1) * (cellSize + gridGap) - gridGap / 2;
       this.#drawMark(drawing, mark, row.color, x, y + rowHeight / 2);
     });
-  }
-
-  #cellHasMark(row, cellIndex) {
-    return row.hasMarkAtCell(cellIndex);
   }
 
   #drawMark(drawing, shapeId, color, cx, cy) {

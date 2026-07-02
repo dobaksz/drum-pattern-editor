@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Download, FileCode2, FileText } from "lucide-react";
 
 export function ExportDialog({ error, format, isExporting, isOpen, onClose, onExport, onFormatChange }) {
@@ -50,28 +50,16 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
         </fieldset>
         {error && <p className="export-error" role="alert">{error}</p>}
         <div className="export-dialog-actions">
-          <CancelButton disabled={isExporting} onClick={onClose} />
-          <ExportButton disabled={isExporting} format={format} onClick={onExport} />
+          <button className="secondary" type="button" disabled={isExporting} onClick={onClose}>
+            Cancel
+          </button>
+          <button className="primary" type="button" disabled={isExporting} onClick={() => void onExport()}>
+            <Download size={17} />
+            {isExporting ? "Exporting…" : `Export ${format.toUpperCase()}`}
+          </button>
         </div>
       </div>
     </dialog>
-  );
-}
-
-function CancelButton({ disabled, onClick }) {
-  return (
-    <button className="secondary" type="button" disabled={disabled} onClick={onClick}>
-      Cancel
-    </button>
-  );
-}
-
-function ExportButton({ disabled, format, onClick }) {
-  return (
-    <button className="primary" type="button" disabled={disabled} onClick={() => void onClick()}>
-      <Download size={17} />
-      {disabled ? "Exporting…" : `Export ${format.toUpperCase()}`}
-    </button>
   );
 }
 

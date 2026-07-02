@@ -5,39 +5,36 @@ import { getSymbolColor } from "./color";
 
 const SVG_FONT = "Arial, Helvetica, sans-serif";
 const PDF_MARGIN = 15;
-const EMPTY_MARK = "empty";
 
 class PatternDrawing {
-  constructor({ columnCount, header, layout, rows, shapeById, stepsPerBeat }) {
-    this.header = header;
-    this.layout = layout;
-    this.rows = rows;
-    this.shapeById = shapeById;
-    this.stepsPerBeat = stepsPerBeat;
-    this.width = layout.rowLabelWidth + layout.rowGap + columnCount * (layout.cellSize + layout.gridGap) - layout.gridGap;
-    this.height = layout.headerHeight + rows.length * (layout.rowHeight + layout.gridGap);
+  constructor(pattern) {
+    this.pattern = pattern;
+    this.width = pattern.layout.rowLabelWidth + pattern.layout.rowGap
+      + pattern.columnCount * (pattern.layout.cellSize + pattern.layout.gridGap) - pattern.layout.gridGap;
+    this.height = pattern.layout.headerHeight
+      + pattern.rowCount * (pattern.layout.rowHeight + pattern.layout.gridGap);
     this.document = this.#draw();
   }
 
   #draw() {
     const drawing = SVG().size(this.width, this.height).viewbox(0, 0, this.width, this.height);
     drawing.rect(this.width, this.height).fill("#ffffff");
-    this.header.forEach((label, index) => this.#drawHeaderCell(drawing, label, index));
-    this.rows.forEach((row, index) => this.#drawRow(drawing, row, index));
+    this.pattern.header.forEach((label, index) => this.#drawHeaderCell(drawing, label, index));
+    this.pattern.rows.forEach((row, index) => this.#drawRow(drawing, row, index));
     return drawing;
   }
 
   #drawHeaderCell(drawing, label, index) {
-    const { cellSize, gridGap, headerHeight, rowGap, rowLabelWidth } = this.layout;
+    const { cellSize, gridGap, headerHeight, rowGap, rowLabelWidth } = this.pattern.layout;
     const x = rowLabelWidth + rowGap + index * (cellSize + gridGap);
-    const isBeat = index % this.stepsPerBeat === 0;
+    const isBeat = index % this.pattern.stepsPerBeat === 0;
 
     drawing.rect(cellSize, headerHeight).move(x, 0).fill(isBeat ? "#667085" : "#7c8495");
     this.#drawText(drawing, label, x + cellSize / 2, 15.5, { opacity: isBeat ? 1 : 0.45 });
   }
 
   #drawRow(drawing, row, rowIndex) {
-    const { cellSize, gridGap, headerHeight, rowGap, rowHeight, rowLabelWidth } = this.layout;
+    const { cellSize, gridGap, headerHeight, rowGap, rowHeight, rowLabelWidth } = this.pattern.layout;
     const y = headerHeight + rowIndex * (rowHeight + gridGap);
 
     drawing.rect(rowLabelWidth, rowHeight).move(0, y).fill(row.color);
@@ -56,15 +53,14 @@ class PatternDrawing {
   }
 
   #cellHasMark(row, cellIndex) {
-    return [row.cells[cellIndex], row.dividers[cellIndex - 1], row.dividers[cellIndex]]
-      .some((mark) => mark && mark !== EMPTY_MARK);
+    return row.hasMarkAtCell(cellIndex);
   }
 
   #drawMark(drawing, shapeId, color, cx, cy) {
-    const shape = this.shapeById[shapeId];
+    const shape = this.pattern.getSymbol(shapeId);
     if (!shape) return;
 
-    const bounds = this.layout.cellSize;
+    const bounds = this.pattern.layout.cellSize;
     const size = bounds / Math.sqrt(2);
     const radius = bounds / 2;
     const strokeWidth = 4;

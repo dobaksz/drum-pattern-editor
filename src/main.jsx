@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BetweenVerticalStart,
@@ -13,58 +13,12 @@ import {
 import "./styles.css";
 import { getSymbolColor } from "./color";
 import { ExportDialog } from "./export_dialog";
+import { EditorModel } from "./model";
 import { PatternExporter } from "./pattern_export";
 
-const DEFAULT_BEATS_PER_BAR = 4;
-const DEFAULT_STEPS_PER_BEAT = 4;
-const MAX_BARS = 4;
-const MAX_BEATS_PER_BAR = 8;
-const CELL_SIZE = 28;
-const GRID_GAP = 2;
-const ROW_LABEL_WIDTH = 82;
-const ROW_ACTION_WIDTH = 58;
-const ROW_GAP = 3;
-const HEADER_HEIGHT = 28;
-const ROW_HEIGHT = 28;
-const ADD_ROW_HEIGHT = 36;
-const EMPTY_MARK = "empty";
-
-const shapeOptions = [
-  { id: "dot", label: "Filled circle", mark: "dot" },
-  { id: "ring", label: "Hollow circle", mark: "ring" },
-  { id: "diamond", label: "Filled diamond", mark: "diamond" },
-  { id: "hollow-diamond", label: "Hollow diamond", mark: "hollow-diamond" }
-];
-
-const shapeById = Object.fromEntries(shapeOptions.map((shape) => [shape.id, shape]));
-
-const rowColors = ["#fcca96", "#ae99c9", "#c7dfa0", "#d9d9d9", "#fcca96", "#ae99c9", "#c7dfa0"];
-const barOptions = Array.from({ length: MAX_BARS }, (_, index) => index + 1);
-const beatOptions = Array.from({ length: MAX_BEATS_PER_BAR }, (_, index) => index + 1);
-
-const stepsPerBeatOptions = [
-  { id: 1, label: "1", tokens: [""] },
-  { id: 2, label: "2", tokens: ["", "&"] },
-  { id: 4, label: "4", tokens: ["", "e", "&", "a"] }
-];
-
-const starterRows = ["Hi Hat", "Snare", "Kick"].map((name, index) => ({
-  id: `starter-row-${index}`,
-  name,
-  color: rowColors[index],
-  cells: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT).fill(EMPTY_MARK),
-  dividers: Array(DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT - 1).fill(EMPTY_MARK)
-}));
-
-function resizeMarks(marks, length) {
-  return marks.length > length
-    ? marks.slice(0, length)
-    : [...marks, ...Array(length - marks.length).fill(EMPTY_MARK)];
-}
-
-function ShapeMark({ color, shapeId }) {
-  if (shapeId === EMPTY_MARK) return null;
-  const shape = shapeById[shapeId];
+function ShapeMark({ color, pattern, shapeId }) {
+  if (shapeId === pattern.emptySymbolId) return null;
+  const shape = pattern.getSymbol(shapeId);
   if (!shape) return null;
   return <span className={`symbol ${shape.mark}`} style={{ "--symbol-color": getSymbolColor(color) }} />;
 }
@@ -100,20 +54,13 @@ function BuyMeACoffeeMark() {
   );
 }
 
-function RhythmControls({
-  bars,
-  beatsPerBar,
-  stepsPerBeat,
-  onBarsChange,
-  onBeatsPerBarChange,
-  onStepsPerBeatChange
-}) {
+function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPerBeatChange }) {
   return (
     <div className="control-group" aria-label="Rhythm settings">
       <label>
         Bars
-        <select value={bars} onChange={(event) => onBarsChange(Number(event.target.value))}>
-          {barOptions.map((barCount) => (
+        <select value={pattern.bars} onChange={(event) => onBarsChange(Number(event.target.value))}>
+          {pattern.barOptions.map((barCount) => (
             <option key={barCount} value={barCount}>
               {barCount}
             </option>
@@ -122,8 +69,8 @@ function RhythmControls({
       </label>
       <label>
         Beats
-        <select value={beatsPerBar} onChange={(event) => onBeatsPerBarChange(Number(event.target.value))}>
-          {beatOptions.map((beatCount) => (
+        <select value={pattern.beatsPerBar} onChange={(event) => onBeatsPerBarChange(Number(event.target.value))}>
+          {pattern.beatOptions.map((beatCount) => (
             <option key={beatCount} value={beatCount}>
               {beatCount}
             </option>
@@ -132,8 +79,8 @@ function RhythmControls({
       </label>
       <label>
         Steps per beat
-        <select value={stepsPerBeat} onChange={(event) => onStepsPerBeatChange(Number(event.target.value))}>
-          {stepsPerBeatOptions.map((option) => (
+        <select value={pattern.stepsPerBeat} onChange={(event) => onStepsPerBeatChange(Number(event.target.value))}>
+          {pattern.stepsPerBeatOptions.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
             </option>
@@ -144,27 +91,27 @@ function RhythmControls({
   );
 }
 
-function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, onSelectShape }) {
+function PaintControls({ pattern, runtime, onSelectPlacementMode, onSelectShape }) {
   return (
     <div className="pattern-tools" aria-label="Paint tools">
       <div className="pattern-tools-cluster">
-        {shapeOptions.map((shape) => (
+        {pattern.symbols.map((shape) => (
           <button
-            className={shape.id === selectedShape ? "swatch active" : "swatch"}
+            className={shape.id === runtime.selectedSymbolId ? "swatch active" : "swatch"}
             key={shape.id}
             title={shape.label}
             type="button"
             onClick={() => onSelectShape(shape.id)}
           >
-            <ShapeMark color="#555555" shapeId={shape.id} />
+            <ShapeMark color="#555555" pattern={pattern} shapeId={shape.id} />
           </button>
         ))}
         <span className="tool-divider" aria-hidden="true" />
         <div className="placement-tools-cluster" role="group" aria-label="Mark placement">
           <button
-            className={placementMode === "cells" ? "placement-option active" : "placement-option"}
+            className={runtime.placementMode === "cells" ? "placement-option active" : "placement-option"}
             type="button"
-            aria-pressed={placementMode === "cells"}
+            aria-pressed={runtime.placementMode === "cells"}
             aria-label="Place marks in cells"
             title="Place marks in cells"
             onClick={() => onSelectPlacementMode("cells")}
@@ -172,9 +119,9 @@ function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, on
             <SquareDot size={17} />
           </button>
           <button
-            className={placementMode === "lines" ? "placement-option active" : "placement-option"}
+            className={runtime.placementMode === "lines" ? "placement-option active" : "placement-option"}
             type="button"
-            aria-pressed={placementMode === "lines"}
+            aria-pressed={runtime.placementMode === "lines"}
             aria-label="Place marks between cells"
             title="Place marks between cells"
             onClick={() => onSelectPlacementMode("lines")}
@@ -184,10 +131,10 @@ function PaintControls({ placementMode, selectedShape, onSelectPlacementMode, on
         </div>
         <span className="tool-divider" aria-hidden="true" />
         <button
-          className={selectedShape === EMPTY_MARK ? "swatch active" : "swatch"}
+          className={runtime.selectedSymbolId === pattern.emptySymbolId ? "swatch active" : "swatch"}
           title="Erase"
           type="button"
-          onClick={() => onSelectShape(EMPTY_MARK)}
+          onClick={() => onSelectShape(pattern.emptySymbolId)}
         >
           <Eraser size={16} />
         </button>
@@ -212,9 +159,7 @@ function ActionBar({ onClearGrid, onOpenExport }) {
 }
 
 function EditorToolbar({
-  bars,
-  beatsPerBar,
-  stepsPerBeat,
+  pattern,
   onBarsChange,
   onBeatsPerBarChange,
   onClearGrid,
@@ -229,9 +174,7 @@ function EditorToolbar({
       </div>
       <div className="editor-ribbon">
         <RhythmControls
-          bars={bars}
-          beatsPerBar={beatsPerBar}
-          stepsPerBeat={stepsPerBeat}
+          pattern={pattern}
           onBarsChange={onBarsChange}
           onBeatsPerBarChange={onBeatsPerBarChange}
           onStepsPerBeatChange={onStepsPerBeatChange}
@@ -293,14 +236,13 @@ function RowActions({ canRemove, row, rowHandlers }) {
   );
 }
 
-function GridCells({ placementMode, row, rowHandlers }) {
+function GridCells({ pattern, placementMode, row, rowHandlers }) {
   const symbolColor = row.color;
 
   return (
     <div className={`cell-strip grid-cells placement-${placementMode}`}>
       {row.cells.map((cell, cellIndex) => {
-        const hasMark = [cell, row.dividers[cellIndex - 1], row.dividers[cellIndex]]
-          .some((mark) => mark && mark !== EMPTY_MARK);
+        const hasMark = row.hasMarkAtCell(cellIndex);
 
         return (
           <button
@@ -311,7 +253,7 @@ function GridCells({ placementMode, row, rowHandlers }) {
             onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
             aria-label={`${row.name} column ${cellIndex + 1}`}
           >
-            <ShapeMark color={symbolColor} shapeId={cell} />
+            <ShapeMark color={symbolColor} pattern={pattern} shapeId={cell} />
           </button>
         );
       })}
@@ -320,10 +262,13 @@ function GridCells({ placementMode, row, rowHandlers }) {
           <div
             className="divider-slot"
             key={`${row.id}-divider-${dividerIndex}`}
-            style={{ left: `${(dividerIndex + 1) * (CELL_SIZE + GRID_GAP) - GRID_GAP / 2}px` }}
+            style={{
+              left: `${(dividerIndex + 1) * (pattern.layout.cellSize + pattern.layout.gridGap)
+                - pattern.layout.gridGap / 2}px`
+            }}
           >
             <div className="divider-mark" aria-hidden="true">
-              <ShapeMark color={symbolColor} shapeId={divider} />
+              <ShapeMark color={symbolColor} pattern={pattern} shapeId={divider} />
             </div>
             <button
               className="divider-target"
@@ -339,14 +284,14 @@ function GridCells({ placementMode, row, rowHandlers }) {
   );
 }
 
-function PatternRow({ canRemove, placementMode, row, rowHandlers }) {
+function PatternRow({ canRemove, pattern, placementMode, row, rowHandlers }) {
   return (
     <div className="pattern-row">
       <RowLabel
         row={row}
         rowHandlers={rowHandlers}
       />
-      <GridCells placementMode={placementMode} row={row} rowHandlers={rowHandlers} />
+      <GridCells pattern={pattern} placementMode={placementMode} row={row} rowHandlers={rowHandlers} />
       <RowActions canRemove={canRemove} row={row} rowHandlers={rowHandlers} />
     </div>
   );
@@ -365,21 +310,19 @@ function AddRowControl({ onAddRow }) {
 }
 
 function PatternGrid({
-  columnCount,
-  header,
-  rows,
+  pattern,
   placementMode,
-  stepsPerBeat,
   onAddRow,
   rowHandlers
 }) {
   return (
-    <div className="pattern-card" style={{ "--columns": columnCount }}>
-      <HeaderRow header={header} stepsPerBeat={stepsPerBeat} />
-      {rows.map((row) => (
+    <div className="pattern-card" style={{ "--columns": pattern.columnCount }}>
+      <HeaderRow header={pattern.header} stepsPerBeat={pattern.stepsPerBeat} />
+      {pattern.rows.map((row) => (
         <PatternRow
-          canRemove={rows.length > 1}
+          canRemove={pattern.rowCount > 1}
           key={row.id}
+          pattern={pattern}
           placementMode={placementMode}
           row={row}
           rowHandlers={rowHandlers}
@@ -391,45 +334,39 @@ function PatternGrid({
 }
 
 function PatternEditor({
-  columnCount,
-  header,
-  rows,
-  placementMode,
-  selectedShape,
-  stepsPerBeat,
+  pattern,
+  runtime,
   onAddRow,
   onSelectPlacementMode,
   onSelectShape,
   rowHandlers
 }) {
+  const { layout } = pattern;
   return (
     <section className="canvas-area">
       <div
         className="pattern-stage"
         style={{
-          "--columns": columnCount,
-          "--cell-size": `${CELL_SIZE}px`,
-          "--grid-gap": `${GRID_GAP}px`,
-          "--add-row-height": `${ADD_ROW_HEIGHT}px`,
-          "--row-action-width": `${ROW_ACTION_WIDTH}px`,
-          "--header-height": `${HEADER_HEIGHT}px`,
-          "--row-label-width": `${ROW_LABEL_WIDTH}px`,
-          "--row-gap": `${ROW_GAP}px`,
-          "--row-height": `${ROW_HEIGHT}px`
+          "--columns": pattern.columnCount,
+          "--cell-size": `${layout.cellSize}px`,
+          "--grid-gap": `${layout.gridGap}px`,
+          "--add-row-height": `${layout.addRowHeight}px`,
+          "--row-action-width": `${layout.rowActionWidth}px`,
+          "--header-height": `${layout.headerHeight}px`,
+          "--row-label-width": `${layout.rowLabelWidth}px`,
+          "--row-gap": `${layout.rowGap}px`,
+          "--row-height": `${layout.rowHeight}px`
         }}
       >
         <PaintControls
-          placementMode={placementMode}
-          selectedShape={selectedShape}
+          pattern={pattern}
+          runtime={runtime}
           onSelectPlacementMode={onSelectPlacementMode}
           onSelectShape={onSelectShape}
         />
         <PatternGrid
-          columnCount={columnCount}
-          header={header}
-          rows={rows}
-          placementMode={placementMode}
-          stepsPerBeat={stepsPerBeat}
+          pattern={pattern}
+          placementMode={runtime.placementMode}
           onAddRow={onAddRow}
           rowHandlers={rowHandlers}
         />
@@ -439,185 +376,62 @@ function PatternEditor({
 }
 
 function App() {
-  const [bars, setBars] = useState(1);
-  const [beatsPerBar, setBeatsPerBar] = useState(DEFAULT_BEATS_PER_BAR);
-  const [stepsPerBeat, setStepsPerBeat] = useState(DEFAULT_STEPS_PER_BEAT);
-  const [rows, setRows] = useState(starterRows);
-  const [placementMode, setPlacementMode] = useState("cells");
-  const [selectedShape, setSelectedShape] = useState("dot");
-  const [exportFormat, setExportFormat] = useState("svg");
-  const [exportError, setExportError] = useState("");
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const columnCount = beatsPerBar * bars * stepsPerBeat;
-  const header = useMemo(() => {
-    const option = stepsPerBeatOptions.find((item) => item.id === stepsPerBeat) ?? stepsPerBeatOptions[2];
-    return Array.from({ length: columnCount }, (_, index) => {
-      const beat = (Math.floor(index / stepsPerBeat) % beatsPerBar) + 1;
-      const token = option.tokens[index % stepsPerBeat];
-      return token || `${beat}`;
-    });
-  }, [beatsPerBar, columnCount, stepsPerBeat]);
+  const [model, setModel] = useState(() => EditorModel.createDefault());
+  const { pattern, runtime } = model;
 
-  function setGridShape(nextBars, nextBeatsPerBar, nextStepsPerBeat) {
-    const cappedBars = Math.min(MAX_BARS, Math.max(1, nextBars));
-    const cappedBeatsPerBar = Math.min(MAX_BEATS_PER_BAR, Math.max(1, nextBeatsPerBar));
-    const cappedStepsPerBeat = stepsPerBeatOptions.some((option) => option.id === nextStepsPerBeat)
-      ? nextStepsPerBeat
-      : DEFAULT_STEPS_PER_BEAT;
-    const nextLength = cappedBeatsPerBar * cappedBars * cappedStepsPerBeat;
-    setBars(cappedBars);
-    setBeatsPerBar(cappedBeatsPerBar);
-    setStepsPerBeat(cappedStepsPerBeat);
-    setRows((current) =>
-      current.map((row) => ({
-        ...row,
-        cells: resizeMarks(row.cells, nextLength),
-        dividers: resizeMarks(row.dividers, Math.max(0, nextLength - 1))
-      }))
-    );
-  }
-
-  function updateBars(nextBars) {
-    setGridShape(nextBars, beatsPerBar, stepsPerBeat);
-  }
-
-  function updateBeatsPerBar(nextBeatsPerBar) {
-    setGridShape(bars, nextBeatsPerBar, stepsPerBeat);
-  }
-
-  function updateStepsPerBeat(nextStepsPerBeat) {
-    setGridShape(bars, beatsPerBar, nextStepsPerBeat);
-  }
-
-  function paintMark(rowId, collection, markIndex) {
-    setRows((current) =>
-      current.map((row) => {
-        if (row.id !== rowId) return row;
-        const marks = [...row[collection]];
-        marks[markIndex] = selectedShape;
-        return { ...row, [collection]: marks };
-      })
-    );
-  }
-
-  function updateName(rowId, name) {
-    setRows((current) => current.map((row) => (row.id === rowId ? { ...row, name } : row)));
-  }
-
-  function updateRowColor(rowId, color) {
-    setRows((current) => current.map((row) => (row.id === rowId ? { ...row, color } : row)));
-  }
-
-  function addRow() {
-    setRows((current) => [
-      ...current,
-      {
-        id: `row-${Math.max(0, ...current.map((row) => Number(row.id.replace("row-", "")) || 0)) + 1}`,
-        name: `Row ${current.length + 1}`,
-        color: rowColors[current.length % rowColors.length],
-        cells: Array(columnCount).fill(EMPTY_MARK),
-        dividers: Array(Math.max(0, columnCount - 1)).fill(EMPTY_MARK)
-      }
-    ]);
-  }
-
-  function removeRow(rowId) {
-    setRows((current) => (current.length > 1 ? current.filter((row) => row.id !== rowId) : current));
-  }
-
-  function clearGrid() {
-    setRows((current) =>
-      current.map((row) => ({
-        ...row,
-        cells: Array(columnCount).fill(EMPTY_MARK),
-        dividers: Array(Math.max(0, columnCount - 1)).fill(EMPTY_MARK)
-      }))
-    );
-  }
-
-  function openExportDialog() {
-    setExportError("");
-    setIsExportDialogOpen(true);
-  }
-
-  function closeExportDialog() {
-    if (isExporting) return;
-    setIsExportDialogOpen(false);
-    setExportError("");
+  function updateModel(update) {
+    setModel((current) => update(current));
   }
 
   async function exportDiagram() {
-    setIsExporting(true);
-    setExportError("");
+    const patternToExport = pattern;
+    const formatToExport = runtime.exportFormat;
+    updateModel((current) => current.startExport());
 
     try {
-      const exporter = PatternExporter.create(exportFormat, {
-        columnCount,
-        header,
-        layout: {
-          cellSize: CELL_SIZE,
-          gridGap: GRID_GAP,
-          headerHeight: HEADER_HEIGHT,
-          rowGap: ROW_GAP,
-          rowHeight: ROW_HEIGHT,
-          rowLabelWidth: ROW_LABEL_WIDTH
-        },
-        rows,
-        shapeById,
-        stepsPerBeat
-      });
+      const exporter = PatternExporter.create(formatToExport, patternToExport);
       const saved = await exporter.export();
-
-      if (saved) setIsExportDialogOpen(false);
+      updateModel((current) => current.finishExport(saved));
     } catch (error) {
       console.error(error);
-      setExportError("The diagram could not be exported. Please try again.");
-    } finally {
-      setIsExporting(false);
+      updateModel((current) => current.failExport("The diagram could not be exported. Please try again."));
     }
   }
 
   const rowHandlers = {
-    paintCell: (rowId, index) => paintMark(rowId, "cells", index),
-    paintDivider: (rowId, index) => paintMark(rowId, "dividers", index),
-    removeRow,
-    updateColor: updateRowColor,
-    updateName
+    paintCell: (rowId, index) => updateModel((current) => current.paintCell(rowId, index)),
+    paintDivider: (rowId, index) => updateModel((current) => current.paintDivider(rowId, index)),
+    removeRow: (rowId) => updateModel((current) => current.removeRow(rowId)),
+    updateColor: (rowId, color) => updateModel((current) => current.recolorRow(rowId, color)),
+    updateName: (rowId, name) => updateModel((current) => current.renameRow(rowId, name))
   };
 
   return (
     <main className="app-shell">
       <EditorToolbar
-        bars={bars}
-        beatsPerBar={beatsPerBar}
-        onBarsChange={updateBars}
-        onBeatsPerBarChange={updateBeatsPerBar}
-        onClearGrid={clearGrid}
-        onOpenExport={openExportDialog}
-        onStepsPerBeatChange={updateStepsPerBeat}
-        stepsPerBeat={stepsPerBeat}
+        pattern={pattern}
+        onBarsChange={(bars) => updateModel((current) => current.withBars(bars))}
+        onBeatsPerBarChange={(beats) => updateModel((current) => current.withBeatsPerBar(beats))}
+        onClearGrid={() => updateModel((current) => current.clearPattern())}
+        onOpenExport={() => updateModel((current) => current.openExportDialog())}
+        onStepsPerBeatChange={(steps) => updateModel((current) => current.withStepsPerBeat(steps))}
       />
       <PatternEditor
-        columnCount={columnCount}
-        header={header}
-        rows={rows}
-        placementMode={placementMode}
-        selectedShape={selectedShape}
-        stepsPerBeat={stepsPerBeat}
-        onAddRow={addRow}
-        onSelectPlacementMode={setPlacementMode}
-        onSelectShape={setSelectedShape}
+        pattern={pattern}
+        runtime={runtime}
+        onAddRow={() => updateModel((current) => current.addRow())}
+        onSelectPlacementMode={(mode) => updateModel((current) => current.selectPlacementMode(mode))}
+        onSelectShape={(symbolId) => updateModel((current) => current.selectSymbol(symbolId))}
         rowHandlers={rowHandlers}
       />
       <ExportDialog
-        error={exportError}
-        format={exportFormat}
-        isExporting={isExporting}
-        isOpen={isExportDialogOpen}
-        onClose={closeExportDialog}
+        error={runtime.exportError}
+        format={runtime.exportFormat}
+        isExporting={runtime.isExporting}
+        isOpen={runtime.isExportDialogOpen}
+        onClose={() => updateModel((current) => current.closeExportDialog())}
         onExport={exportDiagram}
-        onFormatChange={setExportFormat}
+        onFormatChange={(format) => updateModel((current) => current.selectExportFormat(format))}
       />
       <div className="footer-links">
         <a

@@ -130,6 +130,24 @@ select {
   padding: 0 8px;
 }
 
+.checkbox-control {
+  display: flex;
+  height: 34px;
+  align-self: end;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.checkbox-control input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #2f7df4;
+  cursor: pointer;
+}
+
 .actions button {
   display: inline-flex;
   align-items: center;

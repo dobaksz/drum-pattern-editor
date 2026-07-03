@@ -34,7 +34,8 @@ export enum ExportFormat {
 export enum GridParameter {
   Bars = "bars",
   BeatsPerBar = "beats-per-bar",
-  StepsPerBeat = "steps-per-beat"
+  StepsPerBeat = "steps-per-beat",
+  NextBarStart = "next-bar-start"
 }
 
 export const BETWEEN_CELL_FRACTIONS: Readonly<Record<BetweenCellPosition, number>> = Object.freeze({

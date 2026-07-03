@@ -37,10 +37,12 @@ export interface EditorState {
   pendingGridChange: PendingGridChange | null;
 }
 
-export interface PendingGridChange {
-  parameter: GridParameter;
-  value: number;
-}
+export type PendingGridChange =
+  | {
+    parameter: GridParameter.Bars | GridParameter.BeatsPerBar | GridParameter.StepsPerBeat;
+    value: number;
+  }
+  | { parameter: GridParameter.NextBarStart; value: boolean };
 
 export type EditorAction =
   | { type: EditorActionType.RequestGridChange; change: PendingGridChange }
@@ -134,11 +136,12 @@ function withPattern(state: EditorState, pattern: PatternData): EditorState {
   return pattern === state.pattern ? state : { ...state, pattern };
 }
 
-function getGridValue(pattern: PatternData, parameter: GridParameter): number {
+function getGridValue(pattern: PatternData, parameter: GridParameter): number | boolean {
   switch (parameter) {
     case GridParameter.Bars: return pattern.bars;
     case GridParameter.BeatsPerBar: return pattern.beatsPerBar;
     case GridParameter.StepsPerBeat: return pattern.stepsPerBeat;
+    case GridParameter.NextBarStart: return pattern.includeNextBarStart;
   }
 }
 
@@ -161,6 +164,8 @@ function applyGridChange(pattern: PatternData, change: PendingGridChange): Patte
       return pattern.withBeatsPerBar(change.value);
     case GridParameter.StepsPerBeat:
       return pattern.withStepsPerBeat(change.value);
+    case GridParameter.NextBarStart:
+      return pattern.withNextBarStart(change.value);
   }
 }
 

@@ -6,6 +6,7 @@ interface RhythmControlsProps {
   onBarsChange: (value: number) => void;
   onBeatsPerBarChange: (value: number) => void;
   onStepsPerBeatChange: (value: number) => void;
+  onNextBarStartChange: (enabled: boolean) => void;
 }
 
 interface ActionBarProps {
@@ -24,7 +25,13 @@ function Brand() {
   );
 }
 
-function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPerBeatChange }: RhythmControlsProps) {
+function RhythmControls({
+  pattern,
+  onBarsChange,
+  onBeatsPerBarChange,
+  onStepsPerBeatChange,
+  onNextBarStartChange
+}: RhythmControlsProps) {
   return (
     <div className="control-group" aria-label="Rhythm settings">
       <label>
@@ -57,6 +64,14 @@ function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPer
           ))}
         </select>
       </label>
+      <label className="checkbox-control">
+        <input
+          type="checkbox"
+          checked={pattern.includeNextBarStart}
+          onChange={(event) => onNextBarStartChange(event.target.checked)}
+        />
+        End with next bar’s 1
+      </label>
     </div>
   );
 }
@@ -82,7 +97,8 @@ export function EditorToolbar({
   onBeatsPerBarChange,
   onClearGrid,
   onOpenExport,
-  onStepsPerBeatChange
+  onStepsPerBeatChange,
+  onNextBarStartChange
 }: EditorToolbarProps) {
   return (
     <section className="editor-toolbar" aria-label="Pattern controls">
@@ -96,6 +112,7 @@ export function EditorToolbar({
           onBarsChange={onBarsChange}
           onBeatsPerBarChange={onBeatsPerBarChange}
           onStepsPerBeatChange={onStepsPerBeatChange}
+          onNextBarStartChange={onNextBarStartChange}
         />
       </div>
     </section>

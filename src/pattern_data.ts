@@ -22,6 +22,7 @@ interface PatternDataInit {
   bars?: number;
   beatsPerBar?: number;
   stepsPerBeat?: number;
+  includeNextBarStart?: boolean;
   rows: readonly (PatternRow | PatternRowInit)[];
   nextRowId?: number;
 }
@@ -30,6 +31,7 @@ export class PatternData {
   readonly bars: number;
   readonly beatsPerBar: number;
   readonly stepsPerBeat: number;
+  readonly includeNextBarStart: boolean;
   readonly rows: readonly PatternRow[];
   readonly nextRowId: number;
   readonly columnCount: number;
@@ -46,15 +48,17 @@ export class PatternData {
     bars = 1,
     beatsPerBar = DEFAULT_BEATS_PER_BAR,
     stepsPerBeat = DEFAULT_STEPS_PER_BEAT,
+    includeNextBarStart = false,
     rows,
     nextRowId = 1
   }: PatternDataInit) {
     this.bars = bars;
     this.beatsPerBar = beatsPerBar;
     this.stepsPerBeat = stepsPerBeat;
+    this.includeNextBarStart = includeNextBarStart;
     this.rows = Object.freeze(rows.map((row) => row instanceof PatternRow ? row : new PatternRow(row)));
     this.nextRowId = nextRowId;
-    this.columnCount = bars * beatsPerBar * stepsPerBeat;
+    this.columnCount = bars * beatsPerBar * stepsPerBeat + (includeNextBarStart ? 1 : 0);
     this.header = Object.freeze(this.createHeader());
     Object.freeze(this);
   }
@@ -87,15 +91,19 @@ export class PatternData {
   }
 
   withBars(bars: number): PatternData {
-    return this.withGridShape(bars, this.beatsPerBar, this.stepsPerBeat);
+    return this.withGridShape(bars, this.beatsPerBar, this.stepsPerBeat, this.includeNextBarStart);
   }
 
   withBeatsPerBar(beatsPerBar: number): PatternData {
-    return this.withGridShape(this.bars, beatsPerBar, this.stepsPerBeat);
+    return this.withGridShape(this.bars, beatsPerBar, this.stepsPerBeat, this.includeNextBarStart);
   }
 
   withStepsPerBeat(stepsPerBeat: number): PatternData {
-    return this.withGridShape(this.bars, this.beatsPerBar, stepsPerBeat);
+    return this.withGridShape(this.bars, this.beatsPerBar, stepsPerBeat, this.includeNextBarStart);
+  }
+
+  withNextBarStart(includeNextBarStart: boolean): PatternData {
+    return this.withGridShape(this.bars, this.beatsPerBar, this.stepsPerBeat, includeNextBarStart);
   }
 
   paint(rowId: string, index: number, mode: PlacementMode, symbolId: SymbolId): PatternData {
@@ -150,17 +158,23 @@ export class PatternData {
     });
   }
 
-  private withGridShape(bars: number, beatsPerBar: number, stepsPerBeat: number): PatternData {
+  private withGridShape(
+    bars: number,
+    beatsPerBar: number,
+    stepsPerBeat: number,
+    includeNextBarStart: boolean
+  ): PatternData {
     const nextBars = Math.min(MAX_BARS, Math.max(1, bars));
     const nextBeatsPerBar = Math.min(MAX_BEATS_PER_BAR, Math.max(1, beatsPerBar));
     const nextStepsPerBeat = STEPS_PER_BEAT_OPTIONS.some((option) => option.id === stepsPerBeat)
       ? stepsPerBeat
       : DEFAULT_STEPS_PER_BEAT;
-    const columnCount = nextBars * nextBeatsPerBar * nextStepsPerBeat;
+    const columnCount = nextBars * nextBeatsPerBar * nextStepsPerBeat + (includeNextBarStart ? 1 : 0);
     return this.copy({
       bars: nextBars,
       beatsPerBar: nextBeatsPerBar,
       stepsPerBeat: nextStepsPerBeat,
+      includeNextBarStart,
       rows: this.rows.map((row) => row.reset(columnCount))
     });
   }
@@ -178,6 +192,7 @@ export class PatternData {
       bars: this.bars,
       beatsPerBar: this.beatsPerBar,
       stepsPerBeat: this.stepsPerBeat,
+      includeNextBarStart: this.includeNextBarStart,
       rows: this.rows,
       nextRowId: this.nextRowId,
       ...overrides

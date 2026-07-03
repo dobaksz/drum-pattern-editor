@@ -49,6 +49,10 @@ export function App() {
           type: EditorActionType.RequestGridChange,
           change: { parameter: GridParameter.StepsPerBeat, value }
         })}
+        onNextBarStartChange={(value) => dispatch({
+          type: EditorActionType.RequestGridChange,
+          change: { parameter: GridParameter.NextBarStart, value }
+        })}
       />
       <PatternEditor
         pattern={pattern}

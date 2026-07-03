@@ -1,4 +1,4 @@
-import { PatternData } from "./model";
+import { PatternData } from "./pattern_data";
 import { ExportFormat, GridParameter, PlacementMode, SymbolId } from "./types";
 
 export enum EditorActionType {

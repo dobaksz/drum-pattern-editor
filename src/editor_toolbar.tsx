@@ -1,5 +1,5 @@
 import { Download, Grid2X2, RotateCcw } from "lucide-react";
-import { PatternData } from "./model";
+import { PatternData } from "./pattern_data";
 
 interface RhythmControlsProps {
   pattern: PatternData;

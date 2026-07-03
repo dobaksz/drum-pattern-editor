@@ -1,6 +1,6 @@
 import { Dispatch, useCallback } from "react";
 import { EditorAction, EditorActionType } from "./editor_reducer";
-import { PatternData } from "./model";
+import { PatternData } from "./pattern_data";
 import { PatternExporter } from "./pattern_export";
 import { ExportFormat } from "./types";
 

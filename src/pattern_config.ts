@@ -29,6 +29,16 @@ export interface PatternLayout {
   readonly addRowHeight: number;
 }
 
+export interface RowDetails {
+  readonly name: string;
+  readonly color: string;
+}
+
+export interface RowPresetGroup {
+  readonly label: string;
+  readonly presets: readonly RowDetails[];
+}
+
 export const SYMBOLS: readonly SymbolDefinition[] = Object.freeze([
   Object.freeze({ id: SymbolId.Dot, label: "Filled circle", mark: SymbolShape.Dot }),
   Object.freeze({ id: SymbolId.Ring, label: "Hollow circle", mark: SymbolShape.Ring }),
@@ -40,8 +50,29 @@ export const SYMBOL_BY_ID = new Map<SymbolId, SymbolDefinition>(
   SYMBOLS.map((symbol) => [symbol.id, symbol])
 );
 
-export const ROW_COLORS = Object.freeze([
-  "#fcca96", "#ae99c9", "#c7dfa0", "#d9d9d9", "#fcca96", "#ae99c9", "#c7dfa0"
+export const ROW_PRESET_GROUPS: readonly RowPresetGroup[] = Object.freeze([
+  Object.freeze({
+    label: "Cymbals",
+    presets: Object.freeze([
+      Object.freeze({ name: "Hi Hat", color: "#fcca96" }),
+      Object.freeze({ name: "Open HH", color: "#9fd4f0" }),
+      Object.freeze({ name: "Ride Bell", color: "#fbabb8" }),
+      Object.freeze({ name: "Cymbal A", color: "#fdeaa7" }),
+      Object.freeze({ name: "Cymbal B", color: "#f8ca9d" })
+    ])
+  }),
+  Object.freeze({
+    label: "Drums",
+    presets: Object.freeze([
+      Object.freeze({ name: "High Tom", color: "#c7df7d" }),
+      Object.freeze({ name: "Mid Tom", color: "#94c588" }),
+      Object.freeze({ name: "Low Tom", color: "#4dc09e" }),
+      Object.freeze({ name: "Snare", color: "#ae99c9" }),
+      Object.freeze({ name: "Sidestick", color: "#f878fc" }),
+      Object.freeze({ name: "Clap", color: "#f6b3fb" }),
+      Object.freeze({ name: "Kick", color: "#c7dfa0" })
+    ])
+  })
 ]);
 
 export const BAR_OPTIONS = Object.freeze(
@@ -70,6 +101,10 @@ export const PATTERN_LAYOUT: PatternLayout = Object.freeze({
   addRowHeight: 36
 });
 
-export function getRowColor(index: number): string {
-  return ROW_COLORS[index % ROW_COLORS.length]!;
+export function getRowPreset(name: string): RowDetails {
+  for (const group of ROW_PRESET_GROUPS) {
+    const preset = group.presets.find((item) => item.name === name);
+    if (preset) return preset;
+  }
+  throw new Error(`Unknown row preset: ${name}`);
 }

@@ -4,6 +4,7 @@ import { EditorToolbar } from "./editor_toolbar";
 import { ExportDialog } from "./export_dialog";
 import { FooterLinks } from "./footer_links";
 import { GridChangeDialog } from "./grid_change_dialog";
+import { RowDetails } from "./pattern_config";
 import { PatternEditor } from "./pattern_editor";
 import { GridParameter } from "./types";
 import { usePatternExport } from "./use_pattern_export";
@@ -14,12 +15,16 @@ export function App() {
   const exportPattern = usePatternExport(pattern, exportState.format, dispatch);
 
   const rowHandlers = {
+    addRow: (details: RowDetails) => dispatch({ type: EditorActionType.AddRow, details }),
     paintCell: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintCell, rowId, index }),
     paintDivider: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintDivider, rowId, index }),
     removeRow: (rowId: string) => dispatch({ type: EditorActionType.RemoveRow, rowId }),
     moveRow: (rowId: string, targetIndex: number) => dispatch({ type: EditorActionType.MoveRow, rowId, targetIndex }),
-    updateColor: (rowId: string, color: string) => dispatch({ type: EditorActionType.RecolorRow, rowId, color }),
-    updateName: (rowId: string, name: string) => dispatch({ type: EditorActionType.RenameRow, rowId, name })
+    updateDetails: (rowId: string, details: RowDetails) => dispatch({
+      type: EditorActionType.UpdateRowDetails,
+      rowId,
+      details
+    })
   };
 
   return (
@@ -45,7 +50,6 @@ export function App() {
         pattern={pattern}
         placementMode={placementMode}
         selectedSymbolId={selectedSymbolId}
-        onAddRow={() => dispatch({ type: EditorActionType.AddRow })}
         onSelectPlacementMode={(mode) => dispatch({ type: EditorActionType.SelectPlacementMode, mode })}
         onSelectShape={(symbolId) => dispatch({ type: EditorActionType.SelectSymbol, symbolId })}
         rowHandlers={rowHandlers}

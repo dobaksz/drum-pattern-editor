@@ -1,4 +1,5 @@
 import { PatternData } from "./pattern_data";
+import { RowDetails } from "./pattern_config";
 import { ExportFormat, GridParameter, PlacementMode, SymbolId } from "./types";
 
 export enum EditorActionType {
@@ -7,8 +8,7 @@ export enum EditorActionType {
   ConfirmGridChange = "confirm-grid-change",
   PaintCell = "paint-cell",
   PaintDivider = "paint-divider",
-  RenameRow = "rename-row",
-  RecolorRow = "recolor-row",
+  UpdateRowDetails = "update-row-details",
   AddRow = "add-row",
   RemoveRow = "remove-row",
   MoveRow = "move-row",
@@ -49,9 +49,8 @@ export type EditorAction =
   | { type: EditorActionType.ConfirmGridChange }
   | { type: EditorActionType.PaintCell; rowId: string; index: number }
   | { type: EditorActionType.PaintDivider; rowId: string; index: number }
-  | { type: EditorActionType.RenameRow; rowId: string; name: string }
-  | { type: EditorActionType.RecolorRow; rowId: string; color: string }
-  | { type: EditorActionType.AddRow }
+  | { type: EditorActionType.UpdateRowDetails; rowId: string; details: RowDetails }
+  | { type: EditorActionType.AddRow; details: RowDetails }
   | { type: EditorActionType.RemoveRow; rowId: string }
   | { type: EditorActionType.MoveRow; rowId: string; targetIndex: number }
   | { type: EditorActionType.ClearPattern }
@@ -100,12 +99,10 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         state,
         state.pattern.paintDivider(action.rowId, action.index, state.selectedSymbolId)
       );
-    case EditorActionType.RenameRow:
-      return withPattern(state, state.pattern.renameRow(action.rowId, action.name));
-    case EditorActionType.RecolorRow:
-      return withPattern(state, state.pattern.recolorRow(action.rowId, action.color));
+    case EditorActionType.UpdateRowDetails:
+      return withPattern(state, state.pattern.updateRowDetails(action.rowId, action.details));
     case EditorActionType.AddRow:
-      return withPattern(state, state.pattern.addRow());
+      return withPattern(state, state.pattern.addRow(action.details));
     case EditorActionType.RemoveRow:
       return withPattern(state, state.pattern.removeRow(action.rowId));
     case EditorActionType.MoveRow:

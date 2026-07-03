@@ -1,23 +1,25 @@
 import { CSSProperties, DragEvent, useState } from "react";
-import { Menu, Plus, Trash2 } from "lucide-react";
+import { Menu, Pencil, Trash2 } from "lucide-react";
+import { AddRowMenu } from "./add_row_menu";
 import { PatternData } from "./pattern_data";
+import { RowDetails } from "./pattern_config";
 import { PatternRow } from "./pattern_row";
+import { RowDetailsDialog, RowDialogRequest } from "./row_details_dialog";
 import { SymbolMark } from "./symbol_mark";
 import { PlacementMode } from "./types";
 
 export interface PatternRowHandlers {
+  addRow: (details: RowDetails) => void;
   paintCell: (rowId: string, index: number) => void;
   paintDivider: (rowId: string, index: number) => void;
   removeRow: (rowId: string) => void;
   moveRow: (rowId: string, targetIndex: number) => void;
-  updateColor: (rowId: string, color: string) => void;
-  updateName: (rowId: string, name: string) => void;
+  updateDetails: (rowId: string, details: RowDetails) => void;
 }
 
 interface PatternGridProps {
   pattern: PatternData;
   placementMode: PlacementMode;
-  onAddRow: () => void;
   rowHandlers: PatternRowHandlers;
 }
 
@@ -28,8 +30,9 @@ interface DragState {
 
 const EMPTY_DRAG_STATE: DragState = { draggedRowId: null, dropTargetId: null };
 
-export function PatternGrid({ pattern, placementMode, onAddRow, rowHandlers }: PatternGridProps) {
+export function PatternGrid({ pattern, placementMode, rowHandlers }: PatternGridProps) {
   const [dragState, setDragState] = useState<DragState>(EMPTY_DRAG_STATE);
+  const [rowDialog, setRowDialog] = useState<RowDialogRequest>(null);
 
   function startDragging(event: DragEvent<HTMLButtonElement>, rowId: string): void {
     event.dataTransfer.effectAllowed = "move";
@@ -56,6 +59,15 @@ export function PatternGrid({ pattern, placementMode, onAddRow, rowHandlers }: P
     setDragState(EMPTY_DRAG_STATE);
   }
 
+  function saveRowDetails(details: RowDetails): void {
+    if (rowDialog?.mode === "edit") {
+      rowHandlers.updateDetails(rowDialog.row.id, details);
+    } else {
+      rowHandlers.addRow(details);
+    }
+    setRowDialog(null);
+  }
+
   return (
     <div className="pattern-card">
       <HeaderRow pattern={pattern} />
@@ -74,9 +86,18 @@ export function PatternGrid({ pattern, placementMode, onAddRow, rowHandlers }: P
           onDragOver={dragOver}
           onDragStart={startDragging}
           onDrop={dropRow}
+          onEdit={() => setRowDialog({ mode: "edit", row })}
         />
       ))}
-      <AddRowControl onAddRow={onAddRow} />
+      <AddRowControl
+        onAddPreset={rowHandlers.addRow}
+        onCreateCustom={() => setRowDialog({ mode: "create" })}
+      />
+      <RowDetailsDialog
+        request={rowDialog}
+        onClose={() => setRowDialog(null)}
+        onSubmit={saveRowDetails}
+      />
     </div>
   );
 }
@@ -114,6 +135,7 @@ interface PatternRowViewProps {
   onDragOver: (event: DragEvent<HTMLDivElement>, rowId: string) => void;
   onDragStart: (event: DragEvent<HTMLButtonElement>, rowId: string) => void;
   onDrop: (event: DragEvent<HTMLDivElement>, targetIndex: number) => void;
+  onEdit: () => void;
 }
 
 function PatternRowView({
@@ -128,7 +150,8 @@ function PatternRowView({
   onDragEnd,
   onDragOver,
   onDragStart,
-  onDrop
+  onDrop,
+  onEdit
 }: PatternRowViewProps) {
   return (
     <div
@@ -137,9 +160,9 @@ function PatternRowView({
       onDrop={(event) => onDrop(event, index)}
     >
       <RowDragHandle row={row} onDragEnd={onDragEnd} onDragStart={onDragStart} />
-      <RowLabel row={row} rowHandlers={rowHandlers} />
+      <RowLabel row={row} />
       <GridCells pattern={pattern} placementMode={placementMode} row={row} rowHandlers={rowHandlers} />
-      <RowActions canRemove={canRemove} row={row} rowHandlers={rowHandlers} />
+      <RowActions canRemove={canRemove} row={row} rowHandlers={rowHandlers} onEdit={onEdit} />
     </div>
   );
 }
@@ -169,14 +192,10 @@ function RowDragHandle({
   );
 }
 
-function RowLabel({ row, rowHandlers }: { row: PatternRow; rowHandlers: PatternRowHandlers }) {
+function RowLabel({ row }: { row: PatternRow }) {
   return (
-    <div className="row-label" style={{ "--row-color": row.color } as CSSProperties}>
-      <input
-        aria-label="Row name"
-        value={row.name}
-        onChange={(event) => rowHandlers.updateName(row.id, event.target.value)}
-      />
+    <div className="row-label" style={{ "--row-color": row.color } as CSSProperties} title={row.name}>
+      <span>{row.name}</span>
     </div>
   );
 }
@@ -236,27 +255,30 @@ function GridCells({
 function RowActions({
   canRemove,
   row,
-  rowHandlers
+  rowHandlers,
+  onEdit
 }: {
   canRemove: boolean;
   row: PatternRow;
   rowHandlers: PatternRowHandlers;
+  onEdit: () => void;
 }) {
   return (
     <div className="row-actions">
-      <label className="row-color-control" title="Row color">
-        <span style={{ "--row-chip-color": row.color } as CSSProperties} />
-        <input
-          aria-label={`${row.name} row color`}
-          type="color"
-          value={row.color}
-          onChange={(event) => rowHandlers.updateColor(row.id, event.target.value)}
-        />
-      </label>
+      <button
+        className="row-edit-button"
+        type="button"
+        aria-label={`Edit ${row.name}`}
+        onClick={onEdit}
+        title={`Edit ${row.name}`}
+      >
+        <Pencil size={14} />
+      </button>
       {canRemove && (
         <button
           className="row-remove-button"
           type="button"
+          aria-label={`Remove ${row.name}`}
           onClick={() => rowHandlers.removeRow(row.id)}
           title="Remove row"
         >
@@ -267,14 +289,18 @@ function RowActions({
   );
 }
 
-function AddRowControl({ onAddRow }: { onAddRow: () => void }) {
+function AddRowControl({
+  onAddPreset,
+  onCreateCustom
+}: {
+  onAddPreset: (details: RowDetails) => void;
+  onCreateCustom: () => void;
+}) {
   return (
     <div className="add-row-row">
       <div className="add-row-drag-spacer" />
       <div className="add-row-spacer" />
-      <button className="add-row-button" type="button" onClick={onAddRow} title="Add row" aria-label="Add row">
-        <Plus size={15} />
-      </button>
+      <AddRowMenu onAddPreset={onAddPreset} onCreateCustom={onCreateCustom} />
       <div className="add-row-action-spacer" />
     </div>
   );

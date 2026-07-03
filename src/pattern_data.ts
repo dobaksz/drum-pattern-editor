@@ -3,11 +3,12 @@ import {
   BEAT_OPTIONS,
   DEFAULT_BEATS_PER_BAR,
   DEFAULT_STEPS_PER_BEAT,
-  getRowColor,
+  getRowPreset,
   MAX_BARS,
   MAX_BEATS_PER_BAR,
   PATTERN_LAYOUT,
   PatternLayout,
+  RowDetails,
   STEPS_PER_BEAT_OPTIONS,
   StepOption,
   SYMBOL_BY_ID,
@@ -62,8 +63,7 @@ export class PatternData {
     const columnCount = DEFAULT_BEATS_PER_BAR * DEFAULT_STEPS_PER_BEAT;
     const rows = ["Hi Hat", "Snare", "Kick"].map((name, index) => new PatternRow({
       id: `starter-row-${index}`,
-      name,
-      color: getRowColor(index),
+      ...getRowPreset(name),
       cells: emptyMarks(columnCount),
       dividers: emptyMarks(columnCount - 1)
     }));
@@ -106,19 +106,14 @@ export class PatternData {
     return this.paint(rowId, "dividers", index, symbolId);
   }
 
-  renameRow(rowId: string, name: string): PatternData {
-    return this.updateRow(rowId, (row) => row.rename(name));
+  updateRowDetails(rowId: string, details: RowDetails): PatternData {
+    return this.updateRow(rowId, (row) => row.updateDetails(details));
   }
 
-  recolorRow(rowId: string, color: string): PatternData {
-    return this.updateRow(rowId, (row) => row.recolor(color));
-  }
-
-  addRow(): PatternData {
+  addRow(details: RowDetails): PatternData {
     const row = new PatternRow({
       id: `row-${this.nextRowId}`,
-      name: `Row ${this.rows.length + 1}`,
-      color: getRowColor(this.rows.length),
+      ...details,
       cells: emptyMarks(this.columnCount),
       dividers: emptyMarks(Math.max(0, this.columnCount - 1))
     });

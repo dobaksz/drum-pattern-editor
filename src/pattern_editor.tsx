@@ -8,7 +8,6 @@ interface PatternEditorProps {
   pattern: PatternData;
   placementMode: PlacementMode;
   selectedSymbolId: SymbolId;
-  onAddRow: () => void;
   onSelectPlacementMode: (mode: PlacementMode) => void;
   onSelectShape: (symbolId: SymbolId) => void;
   rowHandlers: PatternRowHandlers;
@@ -18,7 +17,6 @@ export function PatternEditor({
   pattern,
   placementMode,
   selectedSymbolId,
-  onAddRow,
   onSelectPlacementMode,
   onSelectShape,
   rowHandlers
@@ -52,7 +50,6 @@ export function PatternEditor({
         <PatternGrid
           pattern={pattern}
           placementMode={placementMode}
-          onAddRow={onAddRow}
           rowHandlers={rowHandlers}
         />
       </div>

@@ -1,4 +1,5 @@
 import { MarkCollection, SymbolId } from "./types";
+import { RowDetails } from "./pattern_config";
 
 export interface PatternRowInit {
   id: string;
@@ -39,12 +40,8 @@ export class PatternRow {
     return this.copy({ [collection]: nextMarks });
   }
 
-  rename(name: string): PatternRow {
-    return this.copy({ name });
-  }
-
-  recolor(color: string): PatternRow {
-    return this.copy({ color });
+  updateDetails({ name, color }: RowDetails): PatternRow {
+    return this.copy({ name, color });
   }
 
   clear(): PatternRow {

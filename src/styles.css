@@ -562,19 +562,19 @@ select {
   background: var(--row-color);
 }
 
-.row-label input {
+.row-label span {
+  display: block;
   width: 100%;
   height: var(--row-height);
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  overflow: hidden;
+  padding: 0 5px;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #20273a;
   font-size: 15px;
   font-weight: 400;
   line-height: var(--row-height);
-  padding: 0;
 }
 
 .row-actions {
@@ -586,7 +586,7 @@ select {
 }
 
 .row-actions .row-remove-button,
-.row-actions .row-color-control {
+.row-actions .row-edit-button {
   position: relative;
   width: 28px;
   height: 28px;
@@ -602,36 +602,17 @@ select {
   line-height: 0;
 }
 
-.row-actions .row-remove-button svg {
+.row-actions button svg {
   display: block;
 }
 
 .row-actions .row-remove-button:hover,
 .row-actions .row-remove-button:focus-visible,
-.row-actions .row-color-control:hover,
-.row-actions .row-color-control:focus-within {
+.row-actions .row-edit-button:hover,
+.row-actions .row-edit-button:focus-visible {
   border-color: #2f7df4;
   background: #edf4ff;
   color: #1d5fd0;
-}
-
-.row-color-control span {
-  width: 16px;
-  height: 16px;
-  border: 1px solid rgba(75, 95, 122, 0.55);
-  border-radius: 2px;
-  background: var(--row-chip-color);
-}
-
-.row-color-control input {
-  position: absolute;
-  inset: 0;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 
 .grid-cell {
@@ -738,12 +719,154 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   border: 1px dashed #a8b5c8;
   border-radius: 4px;
   background: #f7faff;
   color: #4b5f7a;
   cursor: pointer;
   font-size: 13px;
+}
+
+.add-row-menu {
+  position: relative;
+  width: calc(var(--columns) * (var(--cell-size) + var(--grid-gap)) - var(--grid-gap));
+}
+
+.add-row-menu .add-row-button {
+  width: 100%;
+}
+
+.row-preset-menu {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(340px, calc(100vw - 16px));
+  padding: 8px;
+  border: 1px solid #d5dde8;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(31, 48, 78, 0.2);
+}
+
+.row-preset-group {
+  min-width: 0;
+  padding: 2px 4px 6px;
+}
+
+.row-preset-group p {
+  margin: 0;
+  padding: 5px 8px;
+  color: #718096;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row-preset-menu button {
+  display: flex;
+  width: 100%;
+  height: 31px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #35435a;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.row-preset-menu button:hover,
+.row-preset-menu button:focus-visible {
+  background: #edf4ff;
+  color: #1d5fd0;
+  outline: none;
+}
+
+.row-preset-swatch {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(53, 67, 90, 0.22);
+  border-radius: 4px;
+}
+
+.row-preset-menu .custom-row-option {
+  grid-column: 1 / -1;
+  height: 36px;
+  margin-top: 4px;
+  border-top: 1px solid #e4e9f1;
+  border-radius: 0 0 5px 5px;
+  color: #1d5fd0;
+  font-weight: 700;
+}
+
+.row-details-dialog {
+  width: min(400px, calc(100vw - 32px));
+}
+
+.row-details-fields {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.row-details-fields > label {
+  display: grid;
+  gap: 7px;
+  color: #4b5f7a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.row-details-fields > label > input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20273a;
+  font-size: 14px;
+}
+
+.row-details-fields > label > input:focus {
+  border-color: #2f7df4;
+  box-shadow: 0 0 0 3px rgba(47, 125, 244, 0.13);
+  outline: none;
+}
+
+.row-details-color {
+  display: flex;
+  height: 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #607089;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.row-details-color input {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.row-details-dialog .modal-actions button:disabled {
+  cursor: not-allowed;
 }
 
 .add-row-button:hover,

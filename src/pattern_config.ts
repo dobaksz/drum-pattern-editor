@@ -52,21 +52,31 @@ export const SYMBOL_BY_ID = new Map<SymbolId, SymbolDefinition>(
 
 export const ROW_PRESET_GROUPS: readonly RowPresetGroup[] = Object.freeze([
   Object.freeze({
-    label: "Cymbals",
+    label: "Hi-hats",
     presets: Object.freeze([
       Object.freeze({ name: "Hi Hat", color: "#fcca96" }),
-      Object.freeze({ name: "Open HH", color: "#9fd4f0" }),
+      Object.freeze({ name: "Open HH", color: "#9fd4f0" })
+    ])
+  }),
+  Object.freeze({
+    label: "Cymbals",
+    presets: Object.freeze([
       Object.freeze({ name: "Ride Bell", color: "#fbabb8" }),
       Object.freeze({ name: "Cymbal A", color: "#fdeaa7" }),
       Object.freeze({ name: "Cymbal B", color: "#f8ca9d" })
     ])
   }),
   Object.freeze({
-    label: "Drums",
+    label: "Toms",
     presets: Object.freeze([
       Object.freeze({ name: "High Tom", color: "#c7df7d" }),
       Object.freeze({ name: "Mid Tom", color: "#94c588" }),
-      Object.freeze({ name: "Low Tom", color: "#4dc09e" }),
+      Object.freeze({ name: "Low Tom", color: "#4dc09e" })
+    ])
+  }),
+  Object.freeze({
+    label: "Other",
+    presets: Object.freeze([
       Object.freeze({ name: "Snare", color: "#ae99c9" }),
       Object.freeze({ name: "Sidestick", color: "#f878fc" }),
       Object.freeze({ name: "Clap", color: "#f6b3fb" }),

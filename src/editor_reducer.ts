@@ -1,10 +1,10 @@
 import { PatternData } from "./model";
-import { ExportFormat, PlacementMode, SymbolId } from "./types";
+import { ExportFormat, GridParameter, PlacementMode, SymbolId } from "./types";
 
 export enum EditorActionType {
-  SetBars = "set-bars",
-  SetBeatsPerBar = "set-beats-per-bar",
-  SetStepsPerBeat = "set-steps-per-beat",
+  RequestGridChange = "request-grid-change",
+  CancelGridChange = "cancel-grid-change",
+  ConfirmGridChange = "confirm-grid-change",
   PaintCell = "paint-cell",
   PaintDivider = "paint-divider",
   RenameRow = "rename-row",
@@ -35,12 +35,18 @@ export interface EditorState {
   selectedSymbolId: SymbolId;
   placementMode: PlacementMode;
   exportState: ExportState;
+  pendingGridChange: PendingGridChange | null;
+}
+
+export interface PendingGridChange {
+  parameter: GridParameter;
+  value: number;
 }
 
 export type EditorAction =
-  | { type: EditorActionType.SetBars; value: number }
-  | { type: EditorActionType.SetBeatsPerBar; value: number }
-  | { type: EditorActionType.SetStepsPerBeat; value: number }
+  | { type: EditorActionType.RequestGridChange; change: PendingGridChange }
+  | { type: EditorActionType.CancelGridChange }
+  | { type: EditorActionType.ConfirmGridChange }
   | { type: EditorActionType.PaintCell; rowId: string; index: number }
   | { type: EditorActionType.PaintDivider; rowId: string; index: number }
   | { type: EditorActionType.RenameRow; rowId: string; name: string }
@@ -68,18 +74,22 @@ export function createEditorState(): EditorState {
       error: "",
       isOpen: false,
       isRunning: false
-    }
+    },
+    pendingGridChange: null
   };
 }
 
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
-    case EditorActionType.SetBars:
-      return withPattern(state, state.pattern.withBars(action.value));
-    case EditorActionType.SetBeatsPerBar:
-      return withPattern(state, state.pattern.withBeatsPerBar(action.value));
-    case EditorActionType.SetStepsPerBeat:
-      return withPattern(state, state.pattern.withStepsPerBeat(action.value));
+    case EditorActionType.RequestGridChange:
+      if (getGridValue(state.pattern, action.change.parameter) === action.change.value) return state;
+      return state.pattern.isEmpty()
+        ? withPattern(state, applyGridChange(state.pattern, action.change))
+        : { ...state, pendingGridChange: action.change };
+    case EditorActionType.CancelGridChange:
+      return state.pendingGridChange ? { ...state, pendingGridChange: null } : state;
+    case EditorActionType.ConfirmGridChange:
+      return confirmGridChange(state);
     case EditorActionType.PaintCell:
       return withPattern(
         state,
@@ -132,6 +142,36 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
 function withPattern(state: EditorState, pattern: PatternData): EditorState {
   return pattern === state.pattern ? state : { ...state, pattern };
+}
+
+function getGridValue(pattern: PatternData, parameter: GridParameter): number {
+  switch (parameter) {
+    case GridParameter.Bars: return pattern.bars;
+    case GridParameter.BeatsPerBar: return pattern.beatsPerBar;
+    case GridParameter.StepsPerBeat: return pattern.stepsPerBeat;
+  }
+}
+
+function confirmGridChange(state: EditorState): EditorState {
+  const change = state.pendingGridChange;
+  if (!change) return state;
+
+  return {
+    ...state,
+    pattern: applyGridChange(state.pattern, change).clear(),
+    pendingGridChange: null
+  };
+}
+
+function applyGridChange(pattern: PatternData, change: PendingGridChange): PatternData {
+  switch (change.parameter) {
+    case GridParameter.Bars:
+      return pattern.withBars(change.value);
+    case GridParameter.BeatsPerBar:
+      return pattern.withBeatsPerBar(change.value);
+    case GridParameter.StepsPerBeat:
+      return pattern.withStepsPerBeat(change.value);
+  }
 }
 
 function withExportState(state: EditorState, updates: Partial<ExportState>): EditorState {

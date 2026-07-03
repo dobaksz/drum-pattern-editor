@@ -23,4 +23,10 @@ export enum ExportFormat {
   Pdf = "pdf"
 }
 
+export enum GridParameter {
+  Bars = "bars",
+  BeatsPerBar = "beats-per-bar",
+  StepsPerBeat = "steps-per-beat"
+}
+
 export type MarkCollection = "cells" | "dividers";

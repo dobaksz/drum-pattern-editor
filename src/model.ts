@@ -199,6 +199,12 @@ export class PatternData {
     return symbolId === SymbolId.Empty || SYMBOL_BY_ID.has(symbolId);
   }
 
+  isEmpty(): boolean {
+    return this.rows.every((row) =>
+      [...row.cells, ...row.dividers].every((symbolId) => symbolId === SymbolId.Empty)
+    );
+  }
+
   withBars(bars: number): PatternData {
     return this.#withGridShape(bars, this.beatsPerBar, this.stepsPerBeat);
   }

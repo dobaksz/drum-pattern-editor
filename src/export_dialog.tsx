@@ -36,7 +36,7 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
 
   return (
     <dialog
-      className="export-dialog"
+      className="modal-dialog"
       ref={dialogRef}
       onCancel={(event: SyntheticEvent<HTMLDialogElement>) => {
         event.preventDefault();
@@ -45,8 +45,8 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
       onClick={handleBackdropClick}
       onClose={onClose}
     >
-      <div className="export-dialog-panel">
-        <div className="export-dialog-heading">
+      <div className="modal-panel">
+        <div className="modal-heading">
           <h2>Export diagram</h2>
           <p>Choose a file format for the current pattern.</p>
         </div>
@@ -68,7 +68,7 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
           />
         </fieldset>
         {error && <p className="export-error" role="alert">{error}</p>}
-        <div className="export-dialog-actions">
+        <div className="modal-actions">
           <button className="secondary" type="button" disabled={isExporting} onClick={onClose}>
             Cancel
           </button>

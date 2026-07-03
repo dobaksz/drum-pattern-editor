@@ -3,12 +3,14 @@ import { createEditorState, EditorActionType, editorReducer } from "./editor_red
 import { EditorToolbar } from "./editor_toolbar";
 import { ExportDialog } from "./export_dialog";
 import { FooterLinks } from "./footer_links";
+import { GridChangeDialog } from "./grid_change_dialog";
 import { PatternEditor } from "./pattern_editor";
+import { GridParameter } from "./types";
 import { usePatternExport } from "./use_pattern_export";
 
 export function App() {
   const [state, dispatch] = useReducer(editorReducer, undefined, createEditorState);
-  const { exportState, pattern, placementMode, selectedSymbolId } = state;
+  const { exportState, pattern, pendingGridChange, placementMode, selectedSymbolId } = state;
   const exportPattern = usePatternExport(pattern, exportState.format, dispatch);
 
   const rowHandlers = {
@@ -24,11 +26,20 @@ export function App() {
     <main className="app-shell">
       <EditorToolbar
         pattern={pattern}
-        onBarsChange={(value) => dispatch({ type: EditorActionType.SetBars, value })}
-        onBeatsPerBarChange={(value) => dispatch({ type: EditorActionType.SetBeatsPerBar, value })}
+        onBarsChange={(value) => dispatch({
+          type: EditorActionType.RequestGridChange,
+          change: { parameter: GridParameter.Bars, value }
+        })}
+        onBeatsPerBarChange={(value) => dispatch({
+          type: EditorActionType.RequestGridChange,
+          change: { parameter: GridParameter.BeatsPerBar, value }
+        })}
         onClearGrid={() => dispatch({ type: EditorActionType.ClearPattern })}
         onOpenExport={() => dispatch({ type: EditorActionType.OpenExport })}
-        onStepsPerBeatChange={(value) => dispatch({ type: EditorActionType.SetStepsPerBeat, value })}
+        onStepsPerBeatChange={(value) => dispatch({
+          type: EditorActionType.RequestGridChange,
+          change: { parameter: GridParameter.StepsPerBeat, value }
+        })}
       />
       <PatternEditor
         pattern={pattern}
@@ -47,6 +58,11 @@ export function App() {
         onClose={() => dispatch({ type: EditorActionType.CloseExport })}
         onExport={exportPattern}
         onFormatChange={(format) => dispatch({ type: EditorActionType.SelectExportFormat, format })}
+      />
+      <GridChangeDialog
+        change={pendingGridChange}
+        onCancel={() => dispatch({ type: EditorActionType.CancelGridChange })}
+        onConfirm={() => dispatch({ type: EditorActionType.ConfirmGridChange })}
       />
       <FooterLinks />
     </main>

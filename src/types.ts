@@ -14,8 +14,16 @@ export enum SymbolShape {
 }
 
 export enum PlacementMode {
-  Cells = "cells",
-  Lines = "lines"
+  CellCenter = "cell-center",
+  IntervalBefore = "interval-before",
+  IntervalCenter = "interval-center",
+  IntervalAfter = "interval-after"
+}
+
+export enum BetweenCellPosition {
+  Before = "before",
+  Center = "center",
+  After = "after"
 }
 
 export enum ExportFormat {
@@ -29,4 +37,23 @@ export enum GridParameter {
   StepsPerBeat = "steps-per-beat"
 }
 
-export type MarkCollection = "cells" | "dividers";
+export const BETWEEN_CELL_FRACTIONS: Readonly<Record<BetweenCellPosition, number>> = Object.freeze({
+  [BetweenCellPosition.Before]: 1 / 4,
+  [BetweenCellPosition.Center]: 1 / 2,
+  [BetweenCellPosition.After]: 3 / 4
+});
+
+export const BETWEEN_CELL_POSITIONS: readonly BetweenCellPosition[] = Object.freeze([
+  BetweenCellPosition.Before,
+  BetweenCellPosition.Center,
+  BetweenCellPosition.After
+]);
+
+export function getBetweenCellPosition(mode: PlacementMode): BetweenCellPosition | null {
+  switch (mode) {
+    case PlacementMode.CellCenter: return null;
+    case PlacementMode.IntervalBefore: return BetweenCellPosition.Before;
+    case PlacementMode.IntervalCenter: return BetweenCellPosition.Center;
+    case PlacementMode.IntervalAfter: return BetweenCellPosition.After;
+  }
+}

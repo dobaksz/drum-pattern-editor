@@ -15,8 +15,8 @@ import {
   SYMBOLS,
   SymbolDefinition
 } from "./pattern_config";
-import { PatternRow, PatternRowInit } from "./pattern_row";
-import { MarkCollection, SymbolId } from "./types";
+import { emptyBetweenCells, emptySymbols, PatternRow, PatternRowInit } from "./pattern_row";
+import { PlacementMode, SymbolId } from "./types";
 
 interface PatternDataInit {
   bars?: number;
@@ -64,8 +64,8 @@ export class PatternData {
     const rows = ["Hi Hat", "Snare", "Kick"].map((name, index) => new PatternRow({
       id: `starter-row-${index}`,
       ...getRowPreset(name),
-      cells: emptyMarks(columnCount),
-      dividers: emptyMarks(columnCount - 1)
+      cells: emptySymbols(columnCount),
+      betweenCells: emptyBetweenCells(columnCount - 1)
     }));
     return new PatternData({ rows });
   }
@@ -98,12 +98,9 @@ export class PatternData {
     return this.withGridShape(this.bars, this.beatsPerBar, stepsPerBeat);
   }
 
-  paintCell(rowId: string, index: number, symbolId: SymbolId): PatternData {
-    return this.paint(rowId, "cells", index, symbolId);
-  }
-
-  paintDivider(rowId: string, index: number, symbolId: SymbolId): PatternData {
-    return this.paint(rowId, "dividers", index, symbolId);
+  paint(rowId: string, index: number, mode: PlacementMode, symbolId: SymbolId): PatternData {
+    if (!this.hasSymbol(symbolId)) return this;
+    return this.updateRow(rowId, (row) => row.paint(index, mode, symbolId));
   }
 
   updateRowDetails(rowId: string, details: RowDetails): PatternData {
@@ -114,8 +111,8 @@ export class PatternData {
     const row = new PatternRow({
       id: `row-${this.nextRowId}`,
       ...details,
-      cells: emptyMarks(this.columnCount),
-      dividers: emptyMarks(Math.max(0, this.columnCount - 1))
+      cells: emptySymbols(this.columnCount),
+      betweenCells: emptyBetweenCells(Math.max(0, this.columnCount - 1))
     });
     return this.copy({ rows: [...this.rows, row], nextRowId: this.nextRowId + 1 });
   }
@@ -144,16 +141,6 @@ export class PatternData {
     return this.copy({ rows: this.rows.map((row) => row.clear()) });
   }
 
-  private paint(
-    rowId: string,
-    collection: MarkCollection,
-    index: number,
-    symbolId: SymbolId
-  ): PatternData {
-    if (!this.hasSymbol(symbolId)) return this;
-    return this.updateRow(rowId, (row) => row.paint(collection, index, symbolId));
-  }
-
   private createHeader(): string[] {
     const option = STEPS_PER_BEAT_OPTIONS.find((item) => item.id === this.stepsPerBeat)
       ?? STEPS_PER_BEAT_OPTIONS.at(-1)!;
@@ -174,7 +161,7 @@ export class PatternData {
       bars: nextBars,
       beatsPerBar: nextBeatsPerBar,
       stepsPerBeat: nextStepsPerBeat,
-      rows: this.rows.map((row) => row.resize(columnCount))
+      rows: this.rows.map((row) => row.reset(columnCount))
     });
   }
 
@@ -196,8 +183,4 @@ export class PatternData {
       ...overrides
     });
   }
-}
-
-function emptyMarks(length: number): SymbolId[] {
-  return Array<SymbolId>(length).fill(SymbolId.Empty);
 }

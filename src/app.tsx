@@ -6,7 +6,7 @@ import { FooterLinks } from "./footer_links";
 import { GridChangeDialog } from "./grid_change_dialog";
 import { RowDetails } from "./pattern_config";
 import { PatternEditor } from "./pattern_editor";
-import { GridParameter } from "./types";
+import { GridParameter, PlacementMode } from "./types";
 import { usePatternExport } from "./use_pattern_export";
 
 export function App() {
@@ -16,8 +16,12 @@ export function App() {
 
   const rowHandlers = {
     addRow: (details: RowDetails) => dispatch({ type: EditorActionType.AddRow, details }),
-    paintCell: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintCell, rowId, index }),
-    paintDivider: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintDivider, rowId, index }),
+    paintMark: (rowId: string, index: number, mode: PlacementMode) => dispatch({
+      type: EditorActionType.PaintMark,
+      rowId,
+      index,
+      mode
+    }),
     removeRow: (rowId: string) => dispatch({ type: EditorActionType.RemoveRow, rowId }),
     moveRow: (rowId: string, targetIndex: number) => dispatch({ type: EditorActionType.MoveRow, rowId, targetIndex }),
     updateDetails: (rowId: string, details: RowDetails) => dispatch({

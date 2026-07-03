@@ -6,12 +6,16 @@ import { RowDetails } from "./pattern_config";
 import { PatternRow } from "./pattern_row";
 import { RowDetailsDialog, RowDialogRequest } from "./row_details_dialog";
 import { SymbolMark } from "./symbol_mark";
-import { PlacementMode } from "./types";
+import {
+  BETWEEN_CELL_FRACTIONS,
+  BETWEEN_CELL_POSITIONS,
+  getBetweenCellPosition,
+  PlacementMode
+} from "./types";
 
 export interface PatternRowHandlers {
   addRow: (details: RowDetails) => void;
-  paintCell: (rowId: string, index: number) => void;
-  paintDivider: (rowId: string, index: number) => void;
+  paintMark: (rowId: string, index: number, mode: PlacementMode) => void;
   removeRow: (rowId: string) => void;
   moveRow: (rowId: string, targetIndex: number) => void;
   updateDetails: (rowId: string, details: RowDetails) => void;
@@ -211,42 +215,47 @@ function GridCells({
   row: PatternRow;
   rowHandlers: PatternRowHandlers;
 }) {
+  const activeBetweenPosition = getBetweenCellPosition(placementMode);
+  const stride = pattern.layout.cellSize + pattern.layout.gridGap;
+
   return (
     <div className={`cell-strip grid-cells placement-${placementMode}`}>
       {row.cells.map((symbolId, cellIndex) => (
         <button
           className={row.hasMarkAtCell(cellIndex) ? "grid-cell occupied" : "grid-cell"}
-          disabled={placementMode !== PlacementMode.Cells}
+          disabled={placementMode !== PlacementMode.CellCenter}
           key={`${row.id}-${cellIndex}`}
           type="button"
-          onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
+          onClick={() => rowHandlers.paintMark(row.id, cellIndex, PlacementMode.CellCenter)}
           aria-label={`${row.name} column ${cellIndex + 1}`}
         >
           <SymbolMark color={row.color} pattern={pattern} symbolId={symbolId} />
         </button>
       ))}
-      <div className="divider-layer" aria-hidden={placementMode !== PlacementMode.Lines}>
-        {row.dividers.map((symbolId, dividerIndex) => (
-          <div
-            className="divider-slot"
-            key={`${row.id}-divider-${dividerIndex}`}
-            style={{
-              left: `${(dividerIndex + 1) * (pattern.layout.cellSize + pattern.layout.gridGap)
-                - pattern.layout.gridGap / 2}px`
-            }}
-          >
-            <div className="divider-mark" aria-hidden="true">
-              <SymbolMark color={row.color} pattern={pattern} symbolId={symbolId} />
+      <div className="between-cell-layer">
+        {row.betweenCells.flatMap((marks, intervalIndex) =>
+          BETWEEN_CELL_POSITIONS.map((position) => (
+            <div
+              className="between-cell-slot"
+              key={`${row.id}-${intervalIndex}-${position}`}
+              style={{
+                left: `${pattern.layout.cellSize / 2
+                  + (intervalIndex + BETWEEN_CELL_FRACTIONS[position]) * stride}px`
+              }}
+            >
+              <div className="between-cell-mark" aria-hidden="true">
+                <SymbolMark color={row.color} pattern={pattern} symbolId={marks[position]} />
+              </div>
+              <button
+                className={activeBetweenPosition === position ? "between-cell-target active" : "between-cell-target"}
+                disabled={activeBetweenPosition !== position}
+                type="button"
+                onClick={() => rowHandlers.paintMark(row.id, intervalIndex, placementMode)}
+                aria-label={`${row.name}, ${position} position between columns ${intervalIndex + 1} and ${intervalIndex + 2}`}
+              />
             </div>
-            <button
-              className="divider-target"
-              disabled={placementMode !== PlacementMode.Lines}
-              type="button"
-              onClick={() => rowHandlers.paintDivider(row.id, dividerIndex)}
-              aria-label={`${row.name} divider after column ${dividerIndex + 1}`}
-            />
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

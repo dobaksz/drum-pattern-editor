@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
-import { BetweenVerticalStart, Eraser, SquareDot } from "lucide-react";
+import { Eraser } from "lucide-react";
 import { PatternData } from "./pattern_data";
+import { PlacementIcon } from "./placement_icon";
 import { SymbolMark } from "./symbol_mark";
 import { PlacementMode, SymbolId } from "./types";
 
@@ -44,17 +45,31 @@ export function PatternTools({
         <span className="tool-divider" aria-hidden="true" />
         <div className="placement-tools-cluster" role="group" aria-label="Mark placement">
           <PlacementButton
-            active={placementMode === PlacementMode.Cells}
-            icon={<SquareDot size={17} />}
-            label="Place marks in cells"
-            mode={PlacementMode.Cells}
+            active={placementMode === PlacementMode.CellCenter}
+            icon={<PlacementIcon mode={PlacementMode.CellCenter} />}
+            label="Place at cell center"
+            mode={PlacementMode.CellCenter}
             onSelect={onSelectPlacementMode}
           />
           <PlacementButton
-            active={placementMode === PlacementMode.Lines}
-            icon={<BetweenVerticalStart size={17} />}
-            label="Place marks between cells"
-            mode={PlacementMode.Lines}
+            active={placementMode === PlacementMode.IntervalBefore}
+            icon={<PlacementIcon mode={PlacementMode.IntervalBefore} />}
+            label="Place before the midpoint between cells"
+            mode={PlacementMode.IntervalBefore}
+            onSelect={onSelectPlacementMode}
+          />
+          <PlacementButton
+            active={placementMode === PlacementMode.IntervalCenter}
+            icon={<PlacementIcon mode={PlacementMode.IntervalCenter} />}
+            label="Place midway between cells"
+            mode={PlacementMode.IntervalCenter}
+            onSelect={onSelectPlacementMode}
+          />
+          <PlacementButton
+            active={placementMode === PlacementMode.IntervalAfter}
+            icon={<PlacementIcon mode={PlacementMode.IntervalAfter} />}
+            label="Place after the midpoint between cells"
+            mode={PlacementMode.IntervalAfter}
             onSelect={onSelectPlacementMode}
           />
         </div>

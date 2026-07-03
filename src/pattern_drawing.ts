@@ -2,7 +2,12 @@ import { SVG, Svg } from "@svgdotjs/svg.js";
 import { getSymbolColor } from "./color";
 import { PatternData } from "./pattern_data";
 import { PatternRow } from "./pattern_row";
-import { SymbolId, SymbolShape } from "./types";
+import {
+  BETWEEN_CELL_FRACTIONS,
+  BETWEEN_CELL_POSITIONS,
+  SymbolId,
+  SymbolShape
+} from "./types";
 
 const SVG_FONT = "Arial, Helvetica, sans-serif";
 
@@ -55,9 +60,13 @@ export class PatternDrawing {
       this.drawMark(drawing, symbolId, row.color, x + cellSize / 2, y + cellSize / 2);
     });
 
-    row.dividers.forEach((symbolId, index) => {
-      const x = rowLabelWidth + rowGap + (index + 1) * (cellSize + gridGap) - gridGap / 2;
-      this.drawMark(drawing, symbolId, row.color, x, y + rowHeight / 2);
+    const stride = cellSize + gridGap;
+    row.betweenCells.forEach((marks, index) => {
+      BETWEEN_CELL_POSITIONS.forEach((position) => {
+        const x = rowLabelWidth + rowGap + cellSize / 2
+          + (index + BETWEEN_CELL_FRACTIONS[position]) * stride;
+        this.drawMark(drawing, marks[position], row.color, x, y + rowHeight / 2);
+      });
     });
   }
 

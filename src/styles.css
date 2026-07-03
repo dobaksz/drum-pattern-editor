@@ -442,6 +442,19 @@ select {
   color: #1d5fd0;
 }
 
+.placement-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.placement-icon-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
 .tool-divider {
   width: 1px;
   height: 24px;
@@ -636,26 +649,26 @@ select {
   background: transparent;
 }
 
-.placement-cells .grid-cell:hover {
+.placement-cell-center .grid-cell:hover {
   outline: 1px solid rgba(47, 125, 244, 0.7);
   outline-offset: -1px;
 }
 
-.divider-layer {
+.between-cell-layer {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
 }
 
-.divider-slot {
+.between-cell-slot {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 0;
 }
 
-.divider-mark {
+.between-cell-mark {
   position: absolute;
   top: 50%;
   left: 0;
@@ -666,7 +679,7 @@ select {
   pointer-events: none;
 }
 
-.divider-target {
+.between-cell-target {
   position: absolute;
   top: 0;
   left: 0;
@@ -681,11 +694,11 @@ select {
   pointer-events: none;
 }
 
-.placement-lines .divider-target {
+.between-cell-target.active {
   pointer-events: auto;
 }
 
-.divider-target::after {
+.between-cell-target::after {
   content: "";
   position: absolute;
   top: 2px;
@@ -698,13 +711,13 @@ select {
   transition: background-color 120ms ease, box-shadow 120ms ease;
 }
 
-.divider-target:hover::after,
-.divider-target:focus-visible::after {
+.between-cell-target.active:hover::after,
+.between-cell-target.active:focus-visible::after {
   background: rgba(47, 125, 244, 0.65);
   box-shadow: 0 0 0 3px rgba(47, 125, 244, 0.12);
 }
 
-.divider-target:focus-visible {
+.between-cell-target:focus-visible {
   outline: none;
 }
 

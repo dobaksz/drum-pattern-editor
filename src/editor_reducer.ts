@@ -6,8 +6,7 @@ export enum EditorActionType {
   RequestGridChange = "request-grid-change",
   CancelGridChange = "cancel-grid-change",
   ConfirmGridChange = "confirm-grid-change",
-  PaintCell = "paint-cell",
-  PaintDivider = "paint-divider",
+  PaintMark = "paint-mark",
   UpdateRowDetails = "update-row-details",
   AddRow = "add-row",
   RemoveRow = "remove-row",
@@ -47,8 +46,7 @@ export type EditorAction =
   | { type: EditorActionType.RequestGridChange; change: PendingGridChange }
   | { type: EditorActionType.CancelGridChange }
   | { type: EditorActionType.ConfirmGridChange }
-  | { type: EditorActionType.PaintCell; rowId: string; index: number }
-  | { type: EditorActionType.PaintDivider; rowId: string; index: number }
+  | { type: EditorActionType.PaintMark; rowId: string; index: number; mode: PlacementMode }
   | { type: EditorActionType.UpdateRowDetails; rowId: string; details: RowDetails }
   | { type: EditorActionType.AddRow; details: RowDetails }
   | { type: EditorActionType.RemoveRow; rowId: string }
@@ -67,7 +65,7 @@ export function createEditorState(): EditorState {
   return {
     pattern: PatternData.createDefault(),
     selectedSymbolId: SymbolId.Dot,
-    placementMode: PlacementMode.Cells,
+    placementMode: PlacementMode.CellCenter,
     exportState: {
       format: ExportFormat.Svg,
       error: "",
@@ -89,15 +87,10 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return state.pendingGridChange ? { ...state, pendingGridChange: null } : state;
     case EditorActionType.ConfirmGridChange:
       return confirmGridChange(state);
-    case EditorActionType.PaintCell:
+    case EditorActionType.PaintMark:
       return withPattern(
         state,
-        state.pattern.paintCell(action.rowId, action.index, state.selectedSymbolId)
-      );
-    case EditorActionType.PaintDivider:
-      return withPattern(
-        state,
-        state.pattern.paintDivider(action.rowId, action.index, state.selectedSymbolId)
+        state.pattern.paint(action.rowId, action.index, action.mode, state.selectedSymbolId)
       );
     case EditorActionType.UpdateRowDetails:
       return withPattern(state, state.pattern.updateRowDetails(action.rowId, action.details));
@@ -155,7 +148,7 @@ function confirmGridChange(state: EditorState): EditorState {
 
   return {
     ...state,
-    pattern: applyGridChange(state.pattern, change).clear(),
+    pattern: applyGridChange(state.pattern, change),
     pendingGridChange: null
   };
 }

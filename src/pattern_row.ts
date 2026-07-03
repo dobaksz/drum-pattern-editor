@@ -1,12 +1,18 @@
-import { MarkCollection, SymbolId } from "./types";
 import { RowDetails } from "./pattern_config";
+import { getBetweenCellPosition, PlacementMode, SymbolId } from "./types";
+
+export interface BetweenCellMarks {
+  readonly before: SymbolId;
+  readonly center: SymbolId;
+  readonly after: SymbolId;
+}
 
 export interface PatternRowInit {
   id: string;
   name: string;
   color: string;
   cells: readonly SymbolId[];
-  dividers: readonly SymbolId[];
+  betweenCells: readonly BetweenCellMarks[];
 }
 
 export class PatternRow {
@@ -14,30 +20,37 @@ export class PatternRow {
   readonly name: string;
   readonly color: string;
   readonly cells: readonly SymbolId[];
-  readonly dividers: readonly SymbolId[];
+  readonly betweenCells: readonly BetweenCellMarks[];
 
-  constructor({ id, name, color, cells, dividers }: PatternRowInit) {
+  constructor({ id, name, color, cells, betweenCells }: PatternRowInit) {
     this.id = id;
     this.name = name;
     this.color = color;
     this.cells = Object.freeze([...cells]);
-    this.dividers = Object.freeze([...dividers]);
+    this.betweenCells = Object.freeze(betweenCells.map((marks) => Object.freeze({ ...marks })));
     Object.freeze(this);
   }
 
-  resize(columnCount: number): PatternRow {
+  reset(columnCount: number): PatternRow {
     return this.copy({
-      cells: resizeMarks(this.cells, columnCount),
-      dividers: resizeMarks(this.dividers, Math.max(0, columnCount - 1))
+      cells: emptySymbols(columnCount),
+      betweenCells: emptyBetweenCells(Math.max(0, columnCount - 1))
     });
   }
 
-  paint(collection: MarkCollection, index: number, symbolId: SymbolId): PatternRow {
-    const marks = this[collection];
-    if (index < 0 || index >= marks.length) return this;
-    const nextMarks = [...marks];
-    nextMarks[index] = symbolId;
-    return this.copy({ [collection]: nextMarks });
+  paint(index: number, mode: PlacementMode, symbolId: SymbolId): PatternRow {
+    const position = getBetweenCellPosition(mode);
+    if (!position) {
+      if (index < 0 || index >= this.cells.length) return this;
+      const cells = [...this.cells];
+      cells[index] = symbolId;
+      return this.copy({ cells });
+    }
+
+    if (index < 0 || index >= this.betweenCells.length) return this;
+    const betweenCells = [...this.betweenCells];
+    betweenCells[index] = { ...betweenCells[index]!, [position]: symbolId };
+    return this.copy({ betweenCells });
   }
 
   updateDetails({ name, color }: RowDetails): PatternRow {
@@ -45,19 +58,18 @@ export class PatternRow {
   }
 
   clear(): PatternRow {
-    return this.copy({
-      cells: emptyMarks(this.cells.length),
-      dividers: emptyMarks(this.dividers.length)
-    });
+    return this.reset(this.cells.length);
   }
 
   isEmpty(): boolean {
-    return this.cells.every(isEmptyMark) && this.dividers.every(isEmptyMark);
+    return this.cells.every(isEmptySymbol)
+      && this.betweenCells.every((marks) => Object.values(marks).every(isEmptySymbol));
   }
 
   hasMarkAtCell(index: number): boolean {
-    return [this.cells[index], this.dividers[index - 1], this.dividers[index]]
-      .some((symbolId) => symbolId !== undefined && !isEmptyMark(symbolId));
+    return !isEmptySymbol(this.cells[index] ?? SymbolId.Empty)
+      || hasBetweenMark(this.betweenCells[index - 1])
+      || hasBetweenMark(this.betweenCells[index]);
   }
 
   private copy(overrides: Partial<PatternRowInit>): PatternRow {
@@ -65,16 +77,22 @@ export class PatternRow {
   }
 }
 
-function emptyMarks(length: number): SymbolId[] {
+export function emptySymbols(length: number): SymbolId[] {
   return Array<SymbolId>(length).fill(SymbolId.Empty);
 }
 
-function isEmptyMark(symbolId: SymbolId): boolean {
+export function emptyBetweenCells(length: number): BetweenCellMarks[] {
+  return Array.from({ length }, () => ({
+    before: SymbolId.Empty,
+    center: SymbolId.Empty,
+    after: SymbolId.Empty
+  }));
+}
+
+function isEmptySymbol(symbolId: SymbolId): boolean {
   return symbolId === SymbolId.Empty;
 }
 
-function resizeMarks(marks: readonly SymbolId[], length: number): SymbolId[] {
-  return marks.length > length
-    ? marks.slice(0, length)
-    : [...marks, ...emptyMarks(length - marks.length)];
+function hasBetweenMark(marks: BetweenCellMarks | undefined): boolean {
+  return marks !== undefined && Object.values(marks).some((symbolId) => !isEmptySymbol(symbolId));
 }

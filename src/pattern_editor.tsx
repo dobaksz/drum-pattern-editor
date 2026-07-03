@@ -1,5 +1,5 @@
-import { CSSProperties, ReactNode } from "react";
-import { BetweenVerticalStart, Eraser, Plus, SquareDot, Trash2 } from "lucide-react";
+import { CSSProperties, DragEvent, ReactNode, useState } from "react";
+import { BetweenVerticalStart, Eraser, Menu, Plus, SquareDot, Trash2 } from "lucide-react";
 import { getSymbolColor } from "./color";
 import { PatternData, PatternRow } from "./model";
 import { PlacementMode, SymbolId } from "./types";
@@ -30,8 +30,16 @@ interface RowHandlers {
   paintCell: (rowId: string, index: number) => void;
   paintDivider: (rowId: string, index: number) => void;
   removeRow: (rowId: string) => void;
+  moveRow: (rowId: string, targetIndex: number) => void;
   updateColor: (rowId: string, color: string) => void;
   updateName: (rowId: string, name: string) => void;
+}
+
+interface RowDragHandlers {
+  onDragStart: (event: DragEvent<HTMLButtonElement>, row: PatternRow) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLDivElement>, rowId: string) => void;
+  onDrop: (event: DragEvent<HTMLDivElement>, targetIndex: number) => void;
 }
 
 interface PatternEditorProps extends PaintControlsProps {
@@ -121,6 +129,7 @@ function PaintControls({
 function HeaderRow({ header, stepsPerBeat }: { header: readonly string[]; stepsPerBeat: number }) {
   return (
     <div className="header-row">
+      <div className="drag-corner-cell" />
       <div className="corner-cell" />
       <div className="cell-strip">
         {header.map((label, index) => (
@@ -134,6 +143,31 @@ function HeaderRow({ header, stepsPerBeat }: { header: readonly string[]; stepsP
       </div>
       <div className="action-corner-cell" />
     </div>
+  );
+}
+
+function RowDragHandle({
+  row,
+  onDragStart,
+  onDragEnd
+}: {
+  row: PatternRow;
+  onDragStart: RowDragHandlers["onDragStart"];
+  onDragEnd: RowDragHandlers["onDragEnd"];
+}) {
+  return (
+    <button
+      className="row-drag-handle"
+      draggable
+      tabIndex={-1}
+      type="button"
+      aria-label={`Drag ${row.name} row to reorder`}
+      title="Drag to reorder"
+      onDragStart={(event) => onDragStart(event, row)}
+      onDragEnd={onDragEnd}
+    >
+      <Menu size={16} />
+    </button>
   );
 }
 
@@ -227,19 +261,36 @@ function GridCells({
 
 function PatternRowView({
   canRemove,
+  dragHandlers,
+  index,
+  isDragging,
+  isDropTarget,
   pattern,
   placementMode,
   row,
   rowHandlers
 }: {
   canRemove: boolean;
+  dragHandlers: RowDragHandlers;
+  index: number;
+  isDragging: boolean;
+  isDropTarget: boolean;
   pattern: PatternData;
   placementMode: PlacementMode;
   row: PatternRow;
   rowHandlers: RowHandlers;
 }) {
   return (
-    <div className="pattern-row">
+    <div
+      className={`pattern-row${isDragging ? " dragging" : ""}${isDropTarget ? " drop-target" : ""}`}
+      onDragOver={(event) => dragHandlers.onDragOver(event, row.id)}
+      onDrop={(event) => dragHandlers.onDrop(event, index)}
+    >
+      <RowDragHandle
+        row={row}
+        onDragStart={dragHandlers.onDragStart}
+        onDragEnd={dragHandlers.onDragEnd}
+      />
       <RowLabel row={row} rowHandlers={rowHandlers} />
       <GridCells pattern={pattern} placementMode={placementMode} row={row} rowHandlers={rowHandlers} />
       <RowActions canRemove={canRemove} row={row} rowHandlers={rowHandlers} />
@@ -250,6 +301,7 @@ function PatternRowView({
 function AddRowControl({ onAddRow }: { onAddRow: () => void }) {
   return (
     <div className="add-row-row">
+      <div className="add-row-drag-spacer" />
       <div className="add-row-spacer" />
       <button className="add-row-button" type="button" onClick={onAddRow} title="Add row" aria-label="Add row">
         <Plus size={15} />
@@ -270,12 +322,47 @@ function PatternGrid({
   onAddRow: () => void;
   rowHandlers: RowHandlers;
 }) {
+  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
+  function clearDragState(): void {
+    setDraggedRowId(null);
+    setDropTargetId(null);
+  }
+
+  const dragHandlers: RowDragHandlers = {
+    onDragStart: (event, row) => {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", row.id);
+      const rowElement = event.currentTarget.closest<HTMLElement>(".pattern-row");
+      if (rowElement) event.dataTransfer.setDragImage(rowElement, 14, 14);
+      setDraggedRowId(row.id);
+    },
+    onDragEnd: clearDragState,
+    onDragOver: (event, rowId) => {
+      if (!draggedRowId) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDropTargetId(draggedRowId === rowId ? null : rowId);
+    },
+    onDrop: (event, targetIndex) => {
+      event.preventDefault();
+      const rowId = draggedRowId ?? event.dataTransfer.getData("text/plain");
+      if (rowId) rowHandlers.moveRow(rowId, targetIndex);
+      clearDragState();
+    }
+  };
+
   return (
     <div className="pattern-card">
       <HeaderRow header={pattern.header} stepsPerBeat={pattern.stepsPerBeat} />
-      {pattern.rows.map((row) => (
+      {pattern.rows.map((row, index) => (
         <PatternRowView
           canRemove={pattern.rowCount > 1}
+          dragHandlers={dragHandlers}
+          index={index}
+          isDragging={draggedRowId === row.id}
+          isDropTarget={dropTargetId === row.id}
           key={row.id}
           pattern={pattern}
           placementMode={placementMode}
@@ -304,6 +391,7 @@ export function PatternEditor({
         className="pattern-stage"
         style={{
           "--columns": pattern.columnCount,
+          "--row-drag-width": `${layout.rowDragWidth}px`,
           "--cell-size": `${layout.cellSize}px`,
           "--grid-gap": `${layout.gridGap}px`,
           "--add-row-height": `${layout.addRowHeight}px`,

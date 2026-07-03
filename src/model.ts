@@ -12,6 +12,7 @@ export interface SymbolDefinition {
 }
 
 export interface PatternLayout {
+  readonly rowDragWidth: number;
   readonly cellSize: number;
   readonly gridGap: number;
   readonly rowLabelWidth: number;
@@ -62,6 +63,7 @@ const STEPS_PER_BEAT_OPTIONS: readonly StepOption[] = Object.freeze([
 ]);
 
 const LAYOUT: PatternLayout = Object.freeze({
+  rowDragWidth: 28,
   cellSize: 28,
   gridGap: 2,
   rowLabelWidth: 82,
@@ -240,6 +242,20 @@ export class PatternData {
     if (this.rows.length <= 1) return this;
     const rows = this.rows.filter((row) => row.id !== rowId);
     return rows.length === this.rows.length ? this : this.#copy({ rows });
+  }
+
+  moveRow(rowId: string, targetIndex: number): PatternData {
+    const sourceIndex = this.rows.findIndex((row) => row.id === rowId);
+    if (sourceIndex < 0 || !Number.isFinite(targetIndex)) return this;
+
+    const boundedIndex = Math.min(this.rows.length - 1, Math.max(0, Math.trunc(targetIndex)));
+    if (sourceIndex === boundedIndex) return this;
+
+    const rows = [...this.rows];
+    const [row] = rows.splice(sourceIndex, 1);
+    if (!row) return this;
+    rows.splice(boundedIndex, 0, row);
+    return this.#copy({ rows });
   }
 
   clear(): PatternData {

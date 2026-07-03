@@ -11,6 +11,7 @@ export enum EditorActionType {
   RecolorRow = "recolor-row",
   AddRow = "add-row",
   RemoveRow = "remove-row",
+  MoveRow = "move-row",
   ClearPattern = "clear-pattern",
   SelectSymbol = "select-symbol",
   SelectPlacementMode = "select-placement-mode",
@@ -46,6 +47,7 @@ export type EditorAction =
   | { type: EditorActionType.RecolorRow; rowId: string; color: string }
   | { type: EditorActionType.AddRow }
   | { type: EditorActionType.RemoveRow; rowId: string }
+  | { type: EditorActionType.MoveRow; rowId: string; targetIndex: number }
   | { type: EditorActionType.ClearPattern }
   | { type: EditorActionType.SelectSymbol; symbolId: SymbolId }
   | { type: EditorActionType.SelectPlacementMode; mode: PlacementMode }
@@ -96,6 +98,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return withPattern(state, state.pattern.addRow());
     case EditorActionType.RemoveRow:
       return withPattern(state, state.pattern.removeRow(action.rowId));
+    case EditorActionType.MoveRow:
+      return withPattern(state, state.pattern.moveRow(action.rowId, action.targetIndex));
     case EditorActionType.ClearPattern:
       return withPattern(state, state.pattern.clear());
     case EditorActionType.SelectSymbol:

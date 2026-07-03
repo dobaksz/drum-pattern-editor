@@ -15,6 +15,7 @@ export function App() {
     paintCell: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintCell, rowId, index }),
     paintDivider: (rowId: string, index: number) => dispatch({ type: EditorActionType.PaintDivider, rowId, index }),
     removeRow: (rowId: string) => dispatch({ type: EditorActionType.RemoveRow, rowId }),
+    moveRow: (rowId: string, targetIndex: number) => dispatch({ type: EditorActionType.MoveRow, rowId, targetIndex }),
     updateColor: (rowId: string, color: string) => dispatch({ type: EditorActionType.RecolorRow, rowId, color }),
     updateName: (rowId: string, name: string) => dispatch({ type: EditorActionType.RenameRow, rowId, name })
   };

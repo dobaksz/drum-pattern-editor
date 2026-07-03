@@ -444,13 +444,51 @@ select {
 .pattern-row,
 .add-row-row {
   display: grid;
-  grid-template-columns: var(--row-label-width) auto var(--row-action-width);
+  grid-template-columns: var(--row-drag-width) var(--row-label-width) auto var(--row-action-width);
   column-gap: var(--row-gap);
   height: var(--row-height);
 }
 
+.pattern-row {
+  transition: opacity 140ms ease, outline-color 140ms ease;
+}
+
+.pattern-row.dragging {
+  opacity: 0.45;
+}
+
+.pattern-row.drop-target {
+  outline: 2px solid rgba(47, 125, 244, 0.72);
+  outline-offset: 1px;
+}
+
 .header-row {
   height: var(--header-height);
+}
+
+.row-drag-handle {
+  width: var(--row-drag-width);
+  height: var(--row-height);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #718096;
+  cursor: grab;
+}
+
+.row-drag-handle:hover {
+  border-color: #d5dde8;
+  background: #f7f9fc;
+  color: #3d4858;
+}
+
+.row-drag-handle:active {
+  background: #edf4ff;
+  color: #1d5fd0;
+  cursor: grabbing;
 }
 
 .cell-strip {

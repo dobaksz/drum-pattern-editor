@@ -20,7 +20,7 @@ function BuyMeACoffeeMark() {
   );
 }
 
-function FooterLink({ children, href, label, title = label }) {
+function FooterLink({ children, href, label, title = label }: FooterLinkProps) {
   return (
     <a
       className="footer-link"
@@ -50,4 +50,12 @@ export function FooterLinks() {
       </FooterLink>
     </div>
   );
+}
+import { ReactNode } from "react";
+
+interface FooterLinkProps {
+  children: ReactNode;
+  href: string;
+  label: string;
+  title?: string;
 }

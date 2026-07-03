@@ -1,13 +1,50 @@
-import { SVG } from "@svgdotjs/svg.js";
+import { SVG, Svg } from "@svgdotjs/svg.js";
 import { jsPDF } from "jspdf";
 import "svg2pdf.js";
 import { getSymbolColor } from "./color";
+import { PatternData, PatternRow } from "./model";
+import { ExportFormat, SymbolId, SymbolShape } from "./types";
 
 const SVG_FONT = "Arial, Helvetica, sans-serif";
 const PDF_MARGIN = 15;
 
+interface ExportFile {
+  blob: Blob;
+  description: string;
+  extension: `.${string}`;
+  mimeType: string;
+  suggestedName: string;
+}
+
+interface WritableFile {
+  write(data: Blob): Promise<void>;
+  close(): Promise<void>;
+}
+
+interface SaveFileHandle {
+  createWritable(): Promise<WritableFile>;
+}
+
+interface SaveFilePickerWindow extends Window {
+  showSaveFilePicker?: (options: {
+    suggestedName: string;
+    types: Array<{ description: string; accept: Record<string, string[]> }>;
+  }) => Promise<SaveFileHandle>;
+}
+
+interface TextOptions {
+  fill?: string;
+  opacity?: number;
+  size?: number;
+}
+
 class PatternDrawing {
-  constructor(pattern) {
+  readonly pattern: PatternData;
+  readonly width: number;
+  readonly height: number;
+  readonly document: Svg;
+
+  constructor(pattern: PatternData) {
     this.pattern = pattern;
     this.width = pattern.layout.rowLabelWidth + pattern.layout.rowGap
       + pattern.columnCount * (pattern.layout.cellSize + pattern.layout.gridGap) - pattern.layout.gridGap;
@@ -16,7 +53,7 @@ class PatternDrawing {
     this.document = this.#draw();
   }
 
-  #draw() {
+  #draw(): Svg {
     const drawing = SVG().size(this.width, this.height).viewbox(0, 0, this.width, this.height);
     drawing.rect(this.width, this.height).fill("#ffffff");
     this.pattern.header.forEach((label, index) => this.#drawHeaderCell(drawing, label, index));
@@ -24,7 +61,7 @@ class PatternDrawing {
     return drawing;
   }
 
-  #drawHeaderCell(drawing, label, index) {
+  #drawHeaderCell(drawing: Svg, label: string, index: number): void {
     const { cellSize, gridGap, headerHeight, rowGap, rowLabelWidth } = this.pattern.layout;
     const x = rowLabelWidth + rowGap + index * (cellSize + gridGap);
     const isBeat = index % this.pattern.stepsPerBeat === 0;
@@ -33,7 +70,7 @@ class PatternDrawing {
     this.#drawText(drawing, label, x + cellSize / 2, 15.5, { opacity: isBeat ? 1 : 0.45 });
   }
 
-  #drawRow(drawing, row, rowIndex) {
+  #drawRow(drawing: Svg, row: PatternRow, rowIndex: number): void {
     const { cellSize, gridGap, headerHeight, rowGap, rowHeight, rowLabelWidth } = this.pattern.layout;
     const y = headerHeight + rowIndex * (rowHeight + gridGap);
 
@@ -52,7 +89,7 @@ class PatternDrawing {
     });
   }
 
-  #drawMark(drawing, shapeId, color, cx, cy) {
+  #drawMark(drawing: Svg, shapeId: SymbolId, color: string, cx: number, cy: number): void {
     const shape = this.pattern.getSymbol(shapeId);
     if (!shape) return;
 
@@ -63,16 +100,16 @@ class PatternDrawing {
     const symbolColor = getSymbolColor(color);
 
     switch (shape.mark) {
-      case "dot":
+      case SymbolShape.Dot:
         drawing.circle(radius * 2).center(cx, cy).fill(symbolColor);
         break;
-      case "ring":
+      case SymbolShape.Ring:
         drawing.circle((radius - strokeWidth / 2) * 2).center(cx, cy).fill("none").stroke({ color: symbolColor, width: strokeWidth });
         break;
-      case "diamond":
+      case SymbolShape.Diamond:
         drawing.rect(size, size).center(cx, cy).fill(symbolColor).rotate(45, cx, cy);
         break;
-      case "hollow-diamond":
+      case SymbolShape.HollowDiamond:
         drawing
           .rect(size - strokeWidth, size - strokeWidth)
           .center(cx, cy)
@@ -83,7 +120,13 @@ class PatternDrawing {
     }
   }
 
-  #drawText(drawing, text, x, y, { fill = "#ffffff", opacity = 1, size = 14 } = {}) {
+  #drawText(
+    drawing: Svg,
+    text: string,
+    x: number,
+    y: number,
+    { fill = "#ffffff", opacity = 1, size = 14 }: TextOptions = {}
+  ): void {
     drawing.plain(`${text}`).attr({
       x,
       y,
@@ -96,31 +139,32 @@ class PatternDrawing {
   }
 }
 
-export class PatternExporter {
-  constructor(pattern) {
+export abstract class PatternExporter {
+  protected readonly drawing: PatternDrawing;
+
+  constructor(pattern: PatternData) {
     this.drawing = new PatternDrawing(pattern);
   }
 
-  static create(format, pattern) {
+  static create(format: ExportFormat, pattern: PatternData): PatternExporter {
     switch (format) {
-      case "svg": return new SvgExporter(pattern);
-      case "pdf": return new PdfExporter(pattern);
+      case ExportFormat.Svg: return new SvgExporter(pattern);
+      case ExportFormat.Pdf: return new PdfExporter(pattern);
       default: throw new Error(`Unsupported export format: ${format}`);
     }
   }
 
-  async export() {
+  async export(): Promise<boolean> {
     return this.#save(await this.createFile());
   }
 
-  createFile() {
-    throw new Error("Exporter subclasses must implement createFile().");
-  }
+  abstract createFile(): ExportFile | Promise<ExportFile>;
 
-  async #save({ blob, description, extension, mimeType, suggestedName }) {
-    if ("showSaveFilePicker" in window) {
+  async #save({ blob, description, extension, mimeType, suggestedName }: ExportFile): Promise<boolean> {
+    const pickerWindow = window as SaveFilePickerWindow;
+    if (pickerWindow.showSaveFilePicker) {
       try {
-        const handle = await window.showSaveFilePicker({
+        const handle = await pickerWindow.showSaveFilePicker({
           suggestedName,
           types: [{ description, accept: { [mimeType]: [extension] } }]
         });
@@ -129,7 +173,7 @@ export class PatternExporter {
         await writable.close();
         return true;
       } catch (error) {
-        if (error?.name === "AbortError") return false;
+        if (error instanceof DOMException && error.name === "AbortError") return false;
       }
     }
 
@@ -146,7 +190,7 @@ export class PatternExporter {
 }
 
 class SvgExporter extends PatternExporter {
-  createFile() {
+  createFile(): ExportFile {
     return {
       blob: new Blob([this.drawing.document.svg()], { type: "image/svg+xml;charset=utf-8" }),
       description: "SVG image",
@@ -158,7 +202,7 @@ class SvgExporter extends PatternExporter {
 }
 
 class PdfExporter extends PatternExporter {
-  async createFile() {
+  async createFile(): Promise<ExportFile> {
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();

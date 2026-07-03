@@ -1,12 +1,14 @@
 const SATURATION_BOOST = 0.35;
 const LIGHTNESS_FACTOR = 0.72;
 
-export function getSymbolColor(hex) {
+export function getSymbolColor(hex: string): string {
   const value = hex.replace("#", "");
   const normalized = value.length === 3
     ? value.split("").map((channel) => channel + channel).join("")
     : value;
-  const [red, green, blue] = [0, 2, 4].map((index) => parseInt(normalized.slice(index, index + 2), 16) / 255);
+  const red = parseInt(normalized.slice(0, 2), 16) / 255;
+  const green = parseInt(normalized.slice(2, 4), 16) / 255;
+  const blue = parseInt(normalized.slice(4, 6), 16) / 255;
   const max = Math.max(red, green, blue);
   const min = Math.min(red, green, blue);
   let lightness = (max + min) / 2;
@@ -27,11 +29,11 @@ export function getSymbolColor(hex) {
   return hslToHex(hue, saturation, lightness);
 }
 
-function hslToHex(hue, saturation, lightness) {
+function hslToHex(hue: number, saturation: number, lightness: number): string {
   const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
   const section = hue / 60;
   const secondary = chroma * (1 - Math.abs((section % 2) - 1));
-  const channels = [
+  const channels: Array<[number, number, number]> = [
     [chroma, secondary, 0],
     [secondary, chroma, 0],
     [0, chroma, secondary],
@@ -39,7 +41,7 @@ function hslToHex(hue, saturation, lightness) {
     [secondary, 0, chroma],
     [chroma, 0, secondary]
   ];
-  const [red, green, blue] = channels[Math.floor(section) % channels.length];
+  const [red, green, blue] = channels[Math.floor(section) % channels.length]!;
   const offset = lightness - chroma / 2;
   const hex = [red, green, blue]
     .map((channel) => Math.round((channel + offset) * 255).toString(16).padStart(2, "0"))

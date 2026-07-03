@@ -1,8 +1,27 @@
-import { useEffect, useRef } from "react";
+import { MouseEvent as ReactMouseEvent, ReactNode, SyntheticEvent, useEffect, useRef } from "react";
 import { Download, FileCode2, FileText } from "lucide-react";
+import { ExportFormat } from "./types";
 
-export function ExportDialog({ error, format, isExporting, isOpen, onClose, onExport, onFormatChange }) {
-  const dialogRef = useRef(null);
+interface ExportDialogProps {
+  error: string;
+  format: ExportFormat;
+  isExporting: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onExport: () => void | Promise<void>;
+  onFormatChange: (format: ExportFormat) => void;
+}
+
+interface FormatOptionProps {
+  active: boolean;
+  description: string;
+  format: ExportFormat;
+  icon: ReactNode;
+  onChange: (format: ExportFormat) => void;
+}
+
+export function ExportDialog({ error, format, isExporting, isOpen, onClose, onExport, onFormatChange }: ExportDialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -11,7 +30,7 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
     if (!isOpen && dialog.open) dialog.close();
   }, [isOpen]);
 
-  function handleBackdropClick(event) {
+  function handleBackdropClick(event: ReactMouseEvent<HTMLDialogElement>) {
     if (event.target === event.currentTarget && !isExporting) onClose();
   }
 
@@ -19,7 +38,7 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
     <dialog
       className="export-dialog"
       ref={dialogRef}
-      onCancel={(event) => {
+      onCancel={(event: SyntheticEvent<HTMLDialogElement>) => {
         event.preventDefault();
         if (!isExporting) onClose();
       }}
@@ -34,16 +53,16 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
         <fieldset className="export-format-options" disabled={isExporting}>
           <legend>File format</legend>
           <FormatOption
-            active={format === "svg"}
+            active={format === ExportFormat.Svg}
             description="Scalable vector graphic"
-            format="svg"
+            format={ExportFormat.Svg}
             icon={<FileCode2 size={22} />}
             onChange={onFormatChange}
           />
           <FormatOption
-            active={format === "pdf"}
+            active={format === ExportFormat.Pdf}
             description="Portrait A4 document"
-            format="pdf"
+            format={ExportFormat.Pdf}
             icon={<FileText size={22} />}
             onChange={onFormatChange}
           />
@@ -63,7 +82,7 @@ export function ExportDialog({ error, format, isExporting, isOpen, onClose, onEx
   );
 }
 
-function FormatOption({ active, description, format, icon, onChange }) {
+function FormatOption({ active, description, format, icon, onChange }: FormatOptionProps) {
   return (
     <label className={active ? "export-format active" : "export-format"}>
       <input

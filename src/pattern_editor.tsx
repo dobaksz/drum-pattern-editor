@@ -1,14 +1,57 @@
+import { CSSProperties, ReactNode } from "react";
 import { BetweenVerticalStart, Eraser, Plus, SquareDot, Trash2 } from "lucide-react";
 import { getSymbolColor } from "./color";
+import { PatternData, PatternRow } from "./model";
+import { PlacementMode, SymbolId } from "./types";
 
-function ShapeMark({ color, pattern, shapeId }) {
+interface ShapeMarkProps {
+  color: string;
+  pattern: PatternData;
+  shapeId: SymbolId;
+}
+
+interface PlacementButtonProps {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  mode: PlacementMode;
+  onSelect: (mode: PlacementMode) => void;
+}
+
+interface PaintControlsProps {
+  pattern: PatternData;
+  placementMode: PlacementMode;
+  selectedSymbolId: SymbolId;
+  onSelectPlacementMode: (mode: PlacementMode) => void;
+  onSelectShape: (symbolId: SymbolId) => void;
+}
+
+interface RowHandlers {
+  paintCell: (rowId: string, index: number) => void;
+  paintDivider: (rowId: string, index: number) => void;
+  removeRow: (rowId: string) => void;
+  updateColor: (rowId: string, color: string) => void;
+  updateName: (rowId: string, name: string) => void;
+}
+
+interface PatternEditorProps extends PaintControlsProps {
+  onAddRow: () => void;
+  rowHandlers: RowHandlers;
+}
+
+function ShapeMark({ color, pattern, shapeId }: ShapeMarkProps) {
   if (shapeId === pattern.emptySymbolId) return null;
   const shape = pattern.getSymbol(shapeId);
   if (!shape) return null;
-  return <span className={`symbol ${shape.mark}`} style={{ "--symbol-color": getSymbolColor(color) }} />;
+  return (
+    <span
+      className={`symbol ${shape.mark}`}
+      style={{ "--symbol-color": getSymbolColor(color) } as CSSProperties}
+    />
+  );
 }
 
-function PlacementButton({ active, icon, label, mode, onSelect }) {
+function PlacementButton({ active, icon, label, mode, onSelect }: PlacementButtonProps) {
   return (
     <button
       className={active ? "placement-option active" : "placement-option"}
@@ -23,7 +66,13 @@ function PlacementButton({ active, icon, label, mode, onSelect }) {
   );
 }
 
-function PaintControls({ pattern, placementMode, selectedSymbolId, onSelectPlacementMode, onSelectShape }) {
+function PaintControls({
+  pattern,
+  placementMode,
+  selectedSymbolId,
+  onSelectPlacementMode,
+  onSelectShape
+}: PaintControlsProps) {
   return (
     <div className="pattern-tools" aria-label="Paint tools">
       <div className="pattern-tools-cluster">
@@ -41,17 +90,17 @@ function PaintControls({ pattern, placementMode, selectedSymbolId, onSelectPlace
         <span className="tool-divider" aria-hidden="true" />
         <div className="placement-tools-cluster" role="group" aria-label="Mark placement">
           <PlacementButton
-            active={placementMode === "cells"}
+            active={placementMode === PlacementMode.Cells}
             icon={<SquareDot size={17} />}
             label="Place marks in cells"
-            mode="cells"
+            mode={PlacementMode.Cells}
             onSelect={onSelectPlacementMode}
           />
           <PlacementButton
-            active={placementMode === "lines"}
+            active={placementMode === PlacementMode.Lines}
             icon={<BetweenVerticalStart size={17} />}
             label="Place marks between cells"
-            mode="lines"
+            mode={PlacementMode.Lines}
             onSelect={onSelectPlacementMode}
           />
         </div>
@@ -69,7 +118,7 @@ function PaintControls({ pattern, placementMode, selectedSymbolId, onSelectPlace
   );
 }
 
-function HeaderRow({ header, stepsPerBeat }) {
+function HeaderRow({ header, stepsPerBeat }: { header: readonly string[]; stepsPerBeat: number }) {
   return (
     <div className="header-row">
       <div className="corner-cell" />
@@ -88,9 +137,9 @@ function HeaderRow({ header, stepsPerBeat }) {
   );
 }
 
-function RowLabel({ row, rowHandlers }) {
+function RowLabel({ row, rowHandlers }: { row: PatternRow; rowHandlers: RowHandlers }) {
   return (
-    <div className="row-label" style={{ "--row-color": row.color }}>
+    <div className="row-label" style={{ "--row-color": row.color } as CSSProperties}>
       <input
         aria-label="Row name"
         value={row.name}
@@ -100,11 +149,15 @@ function RowLabel({ row, rowHandlers }) {
   );
 }
 
-function RowActions({ canRemove, row, rowHandlers }) {
+function RowActions({
+  canRemove,
+  row,
+  rowHandlers
+}: { canRemove: boolean; row: PatternRow; rowHandlers: RowHandlers }) {
   return (
     <div className="row-actions">
       <label className="row-color-control" title="Row color">
-        <span style={{ "--row-chip-color": row.color }} />
+        <span style={{ "--row-chip-color": row.color } as CSSProperties} />
         <input
           aria-label={`${row.name} row color`}
           type="color"
@@ -121,7 +174,12 @@ function RowActions({ canRemove, row, rowHandlers }) {
   );
 }
 
-function GridCells({ pattern, placementMode, row, rowHandlers }) {
+function GridCells({
+  pattern,
+  placementMode,
+  row,
+  rowHandlers
+}: { pattern: PatternData; placementMode: PlacementMode; row: PatternRow; rowHandlers: RowHandlers }) {
   return (
     <div className={`cell-strip grid-cells placement-${placementMode}`}>
       {row.cells.map((cell, cellIndex) => {
@@ -130,7 +188,7 @@ function GridCells({ pattern, placementMode, row, rowHandlers }) {
         return (
           <button
             className={hasMark ? "grid-cell occupied" : "grid-cell"}
-            disabled={placementMode !== "cells"}
+            disabled={placementMode !== PlacementMode.Cells}
             key={`${row.id}-${cellIndex}`}
             type="button"
             onClick={() => rowHandlers.paintCell(row.id, cellIndex)}
@@ -140,7 +198,7 @@ function GridCells({ pattern, placementMode, row, rowHandlers }) {
           </button>
         );
       })}
-      <div className="divider-layer" aria-hidden={placementMode !== "lines"}>
+      <div className="divider-layer" aria-hidden={placementMode !== PlacementMode.Lines}>
         {row.dividers.map((divider, dividerIndex) => (
           <div
             className="divider-slot"
@@ -155,7 +213,7 @@ function GridCells({ pattern, placementMode, row, rowHandlers }) {
             </div>
             <button
               className="divider-target"
-              disabled={placementMode !== "lines"}
+              disabled={placementMode !== PlacementMode.Lines}
               type="button"
               onClick={() => rowHandlers.paintDivider(row.id, dividerIndex)}
               aria-label={`${row.name} divider after column ${dividerIndex + 1}`}
@@ -167,7 +225,19 @@ function GridCells({ pattern, placementMode, row, rowHandlers }) {
   );
 }
 
-function PatternRow({ canRemove, pattern, placementMode, row, rowHandlers }) {
+function PatternRowView({
+  canRemove,
+  pattern,
+  placementMode,
+  row,
+  rowHandlers
+}: {
+  canRemove: boolean;
+  pattern: PatternData;
+  placementMode: PlacementMode;
+  row: PatternRow;
+  rowHandlers: RowHandlers;
+}) {
   return (
     <div className="pattern-row">
       <RowLabel row={row} rowHandlers={rowHandlers} />
@@ -177,7 +247,7 @@ function PatternRow({ canRemove, pattern, placementMode, row, rowHandlers }) {
   );
 }
 
-function AddRowControl({ onAddRow }) {
+function AddRowControl({ onAddRow }: { onAddRow: () => void }) {
   return (
     <div className="add-row-row">
       <div className="add-row-spacer" />
@@ -189,12 +259,22 @@ function AddRowControl({ onAddRow }) {
   );
 }
 
-function PatternGrid({ pattern, placementMode, onAddRow, rowHandlers }) {
+function PatternGrid({
+  pattern,
+  placementMode,
+  onAddRow,
+  rowHandlers
+}: {
+  pattern: PatternData;
+  placementMode: PlacementMode;
+  onAddRow: () => void;
+  rowHandlers: RowHandlers;
+}) {
   return (
     <div className="pattern-card">
       <HeaderRow header={pattern.header} stepsPerBeat={pattern.stepsPerBeat} />
       {pattern.rows.map((row) => (
-        <PatternRow
+        <PatternRowView
           canRemove={pattern.rowCount > 1}
           key={row.id}
           pattern={pattern}
@@ -216,7 +296,7 @@ export function PatternEditor({
   onSelectPlacementMode,
   onSelectShape,
   rowHandlers
-}) {
+}: PatternEditorProps) {
   const { layout } = pattern;
   return (
     <section className="canvas-area">
@@ -232,7 +312,7 @@ export function PatternEditor({
           "--row-label-width": `${layout.rowLabelWidth}px`,
           "--row-gap": `${layout.rowGap}px`,
           "--row-height": `${layout.rowHeight}px`
-        }}
+        } as CSSProperties}
       >
         <PaintControls
           pattern={pattern}

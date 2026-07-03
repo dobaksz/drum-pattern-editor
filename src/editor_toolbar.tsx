@@ -1,4 +1,19 @@
 import { Download, Grid2X2, RotateCcw } from "lucide-react";
+import { PatternData } from "./model";
+
+interface RhythmControlsProps {
+  pattern: PatternData;
+  onBarsChange: (value: number) => void;
+  onBeatsPerBarChange: (value: number) => void;
+  onStepsPerBeatChange: (value: number) => void;
+}
+
+interface ActionBarProps {
+  onClearGrid: () => void;
+  onOpenExport: () => void;
+}
+
+interface EditorToolbarProps extends RhythmControlsProps, ActionBarProps {}
 
 function Brand() {
   return (
@@ -9,7 +24,7 @@ function Brand() {
   );
 }
 
-function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPerBeatChange }) {
+function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPerBeatChange }: RhythmControlsProps) {
   return (
     <div className="control-group" aria-label="Rhythm settings">
       <label>
@@ -46,7 +61,7 @@ function RhythmControls({ pattern, onBarsChange, onBeatsPerBarChange, onStepsPer
   );
 }
 
-function ActionBar({ onClearGrid, onOpenExport }) {
+function ActionBar({ onClearGrid, onOpenExport }: ActionBarProps) {
   return (
     <div className="actions">
       <button type="button" onClick={onOpenExport} title="Export diagram">
@@ -68,7 +83,7 @@ export function EditorToolbar({
   onClearGrid,
   onOpenExport,
   onStepsPerBeatChange
-}) {
+}: EditorToolbarProps) {
   return (
     <section className="editor-toolbar" aria-label="Pattern controls">
       <div className="editor-topbar">

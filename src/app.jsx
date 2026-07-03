@@ -1,68 +1,51 @@
-import { useState } from "react";
+import { useReducer } from "react";
+import { createEditorState, editorReducer } from "./editor_reducer";
 import { EditorToolbar } from "./editor_toolbar";
 import { ExportDialog } from "./export_dialog";
 import { FooterLinks } from "./footer_links";
-import { EditorModel } from "./model";
 import { PatternEditor } from "./pattern_editor";
-import { PatternExporter } from "./pattern_export";
+import { usePatternExport } from "./use_pattern_export";
 
 export function App() {
-  const [model, setModel] = useState(() => EditorModel.createDefault());
-  const { pattern, runtime } = model;
-
-  function updateModel(update) {
-    setModel((current) => update(current));
-  }
-
-  async function exportDiagram() {
-    const patternToExport = pattern;
-    const formatToExport = runtime.exportFormat;
-    updateModel((current) => current.startExport());
-
-    try {
-      const exporter = PatternExporter.create(formatToExport, patternToExport);
-      const saved = await exporter.export();
-      updateModel((current) => current.finishExport(saved));
-    } catch (error) {
-      console.error(error);
-      updateModel((current) => current.failExport("The diagram could not be exported. Please try again."));
-    }
-  }
+  const [state, dispatch] = useReducer(editorReducer, undefined, createEditorState);
+  const { exportState, pattern, placementMode, selectedSymbolId } = state;
+  const exportPattern = usePatternExport(pattern, exportState.format, dispatch);
 
   const rowHandlers = {
-    paintCell: (rowId, index) => updateModel((current) => current.paintCell(rowId, index)),
-    paintDivider: (rowId, index) => updateModel((current) => current.paintDivider(rowId, index)),
-    removeRow: (rowId) => updateModel((current) => current.removeRow(rowId)),
-    updateColor: (rowId, color) => updateModel((current) => current.recolorRow(rowId, color)),
-    updateName: (rowId, name) => updateModel((current) => current.renameRow(rowId, name))
+    paintCell: (rowId, index) => dispatch({ type: "paint-cell", rowId, index }),
+    paintDivider: (rowId, index) => dispatch({ type: "paint-divider", rowId, index }),
+    removeRow: (rowId) => dispatch({ type: "remove-row", rowId }),
+    updateColor: (rowId, color) => dispatch({ type: "recolor-row", rowId, color }),
+    updateName: (rowId, name) => dispatch({ type: "rename-row", rowId, name })
   };
 
   return (
     <main className="app-shell">
       <EditorToolbar
         pattern={pattern}
-        onBarsChange={(bars) => updateModel((current) => current.withBars(bars))}
-        onBeatsPerBarChange={(beats) => updateModel((current) => current.withBeatsPerBar(beats))}
-        onClearGrid={() => updateModel((current) => current.clearPattern())}
-        onOpenExport={() => updateModel((current) => current.openExportDialog())}
-        onStepsPerBeatChange={(steps) => updateModel((current) => current.withStepsPerBeat(steps))}
+        onBarsChange={(value) => dispatch({ type: "set-bars", value })}
+        onBeatsPerBarChange={(value) => dispatch({ type: "set-beats-per-bar", value })}
+        onClearGrid={() => dispatch({ type: "clear-pattern" })}
+        onOpenExport={() => dispatch({ type: "open-export" })}
+        onStepsPerBeatChange={(value) => dispatch({ type: "set-steps-per-beat", value })}
       />
       <PatternEditor
         pattern={pattern}
-        runtime={runtime}
-        onAddRow={() => updateModel((current) => current.addRow())}
-        onSelectPlacementMode={(mode) => updateModel((current) => current.selectPlacementMode(mode))}
-        onSelectShape={(symbolId) => updateModel((current) => current.selectSymbol(symbolId))}
+        placementMode={placementMode}
+        selectedSymbolId={selectedSymbolId}
+        onAddRow={() => dispatch({ type: "add-row" })}
+        onSelectPlacementMode={(mode) => dispatch({ type: "select-placement-mode", mode })}
+        onSelectShape={(symbolId) => dispatch({ type: "select-symbol", symbolId })}
         rowHandlers={rowHandlers}
       />
       <ExportDialog
-        error={runtime.exportError}
-        format={runtime.exportFormat}
-        isExporting={runtime.isExporting}
-        isOpen={runtime.isExportDialogOpen}
-        onClose={() => updateModel((current) => current.closeExportDialog())}
-        onExport={exportDiagram}
-        onFormatChange={(format) => updateModel((current) => current.selectExportFormat(format))}
+        error={exportState.error}
+        format={exportState.format}
+        isExporting={exportState.isRunning}
+        isOpen={exportState.isOpen}
+        onClose={() => dispatch({ type: "close-export" })}
+        onExport={exportPattern}
+        onFormatChange={(format) => dispatch({ type: "select-export-format", format })}
       />
       <FooterLinks />
     </main>

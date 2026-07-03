@@ -23,13 +23,13 @@ function PlacementButton({ active, icon, label, mode, onSelect }) {
   );
 }
 
-function PaintControls({ pattern, runtime, onSelectPlacementMode, onSelectShape }) {
+function PaintControls({ pattern, placementMode, selectedSymbolId, onSelectPlacementMode, onSelectShape }) {
   return (
     <div className="pattern-tools" aria-label="Paint tools">
       <div className="pattern-tools-cluster">
         {pattern.symbols.map((shape) => (
           <button
-            className={shape.id === runtime.selectedSymbolId ? "swatch active" : "swatch"}
+            className={shape.id === selectedSymbolId ? "swatch active" : "swatch"}
             key={shape.id}
             title={shape.label}
             type="button"
@@ -41,14 +41,14 @@ function PaintControls({ pattern, runtime, onSelectPlacementMode, onSelectShape 
         <span className="tool-divider" aria-hidden="true" />
         <div className="placement-tools-cluster" role="group" aria-label="Mark placement">
           <PlacementButton
-            active={runtime.placementMode === "cells"}
+            active={placementMode === "cells"}
             icon={<SquareDot size={17} />}
             label="Place marks in cells"
             mode="cells"
             onSelect={onSelectPlacementMode}
           />
           <PlacementButton
-            active={runtime.placementMode === "lines"}
+            active={placementMode === "lines"}
             icon={<BetweenVerticalStart size={17} />}
             label="Place marks between cells"
             mode="lines"
@@ -57,7 +57,7 @@ function PaintControls({ pattern, runtime, onSelectPlacementMode, onSelectShape 
         </div>
         <span className="tool-divider" aria-hidden="true" />
         <button
-          className={runtime.selectedSymbolId === pattern.emptySymbolId ? "swatch active" : "swatch"}
+          className={selectedSymbolId === pattern.emptySymbolId ? "swatch active" : "swatch"}
           title="Erase"
           type="button"
           onClick={() => onSelectShape(pattern.emptySymbolId)}
@@ -210,7 +210,8 @@ function PatternGrid({ pattern, placementMode, onAddRow, rowHandlers }) {
 
 export function PatternEditor({
   pattern,
-  runtime,
+  placementMode,
+  selectedSymbolId,
   onAddRow,
   onSelectPlacementMode,
   onSelectShape,
@@ -235,13 +236,14 @@ export function PatternEditor({
       >
         <PaintControls
           pattern={pattern}
-          runtime={runtime}
+          placementMode={placementMode}
+          selectedSymbolId={selectedSymbolId}
           onSelectPlacementMode={onSelectPlacementMode}
           onSelectShape={onSelectShape}
         />
         <PatternGrid
           pattern={pattern}
-          placementMode={runtime.placementMode}
+          placementMode={placementMode}
           onAddRow={onAddRow}
           rowHandlers={rowHandlers}
         />
